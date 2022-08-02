@@ -1,8 +1,6 @@
 use crate::aws::record::{DisplayRecord, Record};
 use crate::DynIpError;
-use aws_sdk_route53::model::{
-    Change, ChangeAction, ChangeBatch, ResourceRecord, ResourceRecordSet, RrType,
-};
+use aws_sdk_route53::model::{Change, ChangeAction, ChangeBatch};
 use aws_sdk_route53::Client;
 
 #[derive(Clone)]

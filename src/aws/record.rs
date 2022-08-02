@@ -24,7 +24,7 @@ impl From<&DisplayRecord> for Record {
             domain: r.domain.clone(),
             record_type: r.record_type.clone(),
             ip: r.ip.clone(),
-            ttl: r.ttl.clone(),
+            ttl: r.ttl,
         }
     }
 }
@@ -55,7 +55,7 @@ impl From<ResourceRecordSet> for Record {
     fn from(r: ResourceRecordSet) -> Self {
         Record {
             domain: r.name.unwrap_or_default(),
-            record_type: r.r#type.unwrap_or_else(|| RrType::A).as_str().to_string(),
+            record_type: r.r#type.unwrap_or(RrType::A).as_str().to_string(),
             ip: r
                 .resource_records
                 .map(|v| {
@@ -64,7 +64,7 @@ impl From<ResourceRecordSet> for Record {
                 })
                 .unwrap_or_default()
                 .unwrap_or_default(),
-            ttl: r.ttl.unwrap_or_else(|| 60),
+            ttl: r.ttl.unwrap_or(60),
         }
     }
 }
@@ -80,8 +80,8 @@ impl Record {
             domain: self.domain.clone(),
             record_type: self.record_type.clone(),
             ip: self.ip.clone(),
-            ttl: self.ttl.clone(),
-            id: self.id(salt).clone(),
+            ttl: self.ttl,
+            id: self.id(salt),
         }
     }
 }

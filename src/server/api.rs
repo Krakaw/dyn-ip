@@ -19,16 +19,8 @@ pub async fn start<'a>(
 ) -> Result<(), DynIpError> {
     info!("Starting server on {:?}", listen);
     HttpServer::new(move || {
-        let app = App::new()
+        App::new()
             .wrap(Logger::default())
-            // .wrap_fn(|req, srv| {
-            //     let ip = req
-            //         .headers()
-            //         .get("HTTP_CLIENT_IP")
-            //         .or_else(|| req.headers().get("HTTP_X_FORWARDED_FOR"))
-            //         .or_else(|| req.headers().get("REMOTE_ADDR"));
-            //     req.headers_mut().insert("X_HEADER", ip);
-            // })
             .app_data(web::Data::new(api_config.clone()))
             .app_data(web::Data::new(route_53.clone()))
             .service(
@@ -42,8 +34,7 @@ pub async fn start<'a>(
                         "/{id}/{ip}",
                         web::patch().to(routes::domains::update_user_supplied),
                     ),
-            );
-        app
+            )
     })
     .bind(listen)?
     .run()

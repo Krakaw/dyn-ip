@@ -2,7 +2,7 @@ use actix_web::{web, HttpRequest, Responder, Result};
 use aws_sdk_route53::model::ChangeAction;
 use std::net::IpAddr;
 
-use crate::aws::record::{DisplayRecord, Record};
+use crate::aws::record::Record;
 use crate::DynIpError::{DomainHashNotFound, MissingIp};
 use crate::{ApiConfig, Route53};
 
