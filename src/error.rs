@@ -9,4 +9,15 @@ pub enum DynIpError {
     AwsSdk(String),
     #[error("Domain Parse Error: {0}")]
     DomainParse(String),
+    #[error("Socker Error: {0}")]
+    SocketAddr(#[from] std::net::AddrParseError),
+    #[error("Actix Error: {0}")]
+    ActixError(#[from] actix_web::Error),
+    #[error("IO Error {0}")]
+    FileIO(#[from] std::io::Error),
+    #[error("Missing Update IP Address")]
+    MissingIp,
+    #[error("Domain Hash Not Found")]
+    DomainHashNotFound,
 }
+impl actix_web::error::ResponseError for DynIpError {}

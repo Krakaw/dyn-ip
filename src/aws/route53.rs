@@ -1,18 +1,18 @@
-use crate::aws::record::Record;
+use crate::aws::record::{DisplayRecord, Record};
 use crate::DynIpError;
 use aws_sdk_route53::model::{
     Change, ChangeAction, ChangeBatch, ResourceRecord, ResourceRecordSet, RrType,
 };
-use aws_sdk_route53::output::ListResourceRecordSetsOutput;
 use aws_sdk_route53::Client;
 
-pub struct Route53<'a> {
-    pub client: &'a Client,
+#[derive(Clone)]
+pub struct Route53 {
+    pub client: Client,
     pub hosted_zone_id: String,
     pub domain_name: String,
 }
 
-impl<'a> Route53<'a> {
+impl Route53 {
     pub async fn update_record(
         &self,
         change_action: ChangeAction,
@@ -32,6 +32,15 @@ impl<'a> Route53<'a> {
             .map_err(|e| DynIpError::AwsSdk(e.to_string()))?;
 
         Ok(())
+    }
+
+    pub async fn list_display_records(&self, salt: &str) -> Result<Vec<DisplayRecord>, DynIpError> {
+        Ok(self
+            .list_records()
+            .await?
+            .iter()
+            .map(|r| r.for_display(salt))
+            .collect::<Vec<DisplayRecord>>())
     }
 
     pub async fn list_records(&self) -> Result<Vec<Record>, DynIpError> {

@@ -1,2 +1,2 @@
-pub mod route53;
 pub mod record;
+pub mod route53;
