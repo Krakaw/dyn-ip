@@ -24,3 +24,6 @@ A dynamic IP service that uses Route53 as the provider.
 
     # Test it
     dig subdomain.example.com
+
+    # Use the web frontend
+    open http://localhost:8080/api/admin
