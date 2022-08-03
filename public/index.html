@@ -6,16 +6,16 @@
 <body>
 <section></section>
 <script>
-    
+
     async function getDomains() {
-        const result = await fetch('/domains');
+        const result = await fetch('/api/domains');
         const domains = await result.json();
         return domains;
     }
-    
+
     function init() {
         getDomains().then(d => {
-            
+            console.log(d)
         });
     }
     init();
