@@ -9,6 +9,7 @@ use std::net::SocketAddr;
 
 use crate::error::DynIpError;
 use crate::server::api::ApiConfig;
+use crate::server::auth::Auth;
 
 mod aws;
 mod error;
@@ -26,6 +27,13 @@ async fn main() -> Result<(), DynIpError> {
         .unwrap_or_else(|_| "0.0.0.0:8080".to_string())
         .parse()?;
     let salt = std::env::var("SALT").unwrap_or_default();
+    let username = std::env::var("BASIC_AUTH_USERNAME")
+        .ok()
+        .filter(|u| !u.is_empty());
+    let password = std::env::var("BASIC_AUTH_PASSWORD")
+        .ok()
+        .filter(|p| !p.is_empty());
+
     let shared_config = aws_config::from_env().load().await;
     let client = Client::new(&shared_config);
     let r53 = Route53 {
@@ -33,7 +41,15 @@ async fn main() -> Result<(), DynIpError> {
         hosted_zone_id,
         domain_name,
     };
-    server::api::start(&listen, r53, ApiConfig { salt }).await?;
+    server::api::start(
+        &listen,
+        r53,
+        ApiConfig {
+            salt,
+            auth: Auth { username, password },
+        },
+    )
+    .await?;
 
     Ok(())
 }

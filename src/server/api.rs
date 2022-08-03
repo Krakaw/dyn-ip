@@ -1,15 +1,41 @@
 use std::net::SocketAddr;
 
-use actix_web::middleware::Logger;
-use actix_web::{web, App, HttpServer};
+use actix_web::dev::ServiceRequest;
+use actix_web::middleware::{Condition, Logger};
+use actix_web::{web, App, Error, HttpServer};
+use actix_web_httpauth::extractors::basic::BasicAuth;
+use actix_web_httpauth::extractors::{basic, AuthenticationError};
+use actix_web_httpauth::middleware::HttpAuthentication;
 use log::info;
 
+use crate::server::auth::Auth;
 use crate::server::routes;
 use crate::{DynIpError, Route53};
 
 #[derive(Clone)]
 pub struct ApiConfig {
     pub salt: String,
+    pub auth: Auth,
+}
+
+async fn validator(
+    req: ServiceRequest,
+    credentials: BasicAuth,
+) -> Result<ServiceRequest, (Error, ServiceRequest)> {
+    if let Some(api_config) = req.app_data::<web::Data<ApiConfig>>() {
+        if api_config.auth.check_credentials(credentials) {
+            Ok(req)
+        } else {
+            let config = req
+                .app_data::<basic::Config>()
+                .cloned()
+                .unwrap_or_default()
+                .realm("dyn-ip requires auth");
+            Err((AuthenticationError::from(config).into(), req))
+        }
+    } else {
+        panic!("ApiConfig data not found.")
+    }
 }
 
 pub async fn start<'a>(
@@ -19,8 +45,11 @@ pub async fn start<'a>(
 ) -> Result<(), DynIpError> {
     info!("Starting server on {:?}", listen);
     HttpServer::new(move || {
+        let auth = HttpAuthentication::basic(validator);
+
         App::new()
             .wrap(Logger::default())
+            .wrap(Condition::new(api_config.auth.has_credentials(), auth))
             .app_data(web::Data::new(api_config.clone()))
             .app_data(web::Data::new(route_53.clone()))
             .service(
