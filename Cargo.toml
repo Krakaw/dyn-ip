@@ -2,7 +2,13 @@
 name = "dyn-ip"
 version = "0.1.0"
 edition = "2021"
-
+authors = ["Krakaw <41575888+Krakaw@users.noreply.github.com>"]
+license = "MIT"
+description = "Track features and file ownership for git repositories"
+homepage = "https://github.com/Krakaw/dyn-ip"
+repository = "https://github.com/Krakaw/dyn-ip"
+keywords = ["dns", "aws", "route53", "dynamic-ip"]
+categories = ["command-line-utilities", "web-programming::http-server"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
