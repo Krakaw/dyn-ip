@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use actix_web::dev::ServiceRequest;
 use actix_web::middleware::{Condition, Logger};
-use actix_web::{web, App, Error, HttpServer};
+use actix_web::{web, App, Error, HttpResponse, HttpServer};
 use actix_web_httpauth::extractors::basic::BasicAuth;
 use actix_web_httpauth::extractors::{basic, AuthenticationError};
 use actix_web_httpauth::middleware::HttpAuthentication;
@@ -55,6 +55,7 @@ pub async fn start<'a>(
             .service(
                 web::scope("/domains")
                     .route("", web::get().to(routes::domains::index))
+                    .route("", web::post().to(routes::domains::add))
                     .route(
                         "/{id}",
                         web::patch().to(routes::domains::update_with_peer_address),
@@ -63,6 +64,12 @@ pub async fn start<'a>(
                         "/{id}/{ip}",
                         web::patch().to(routes::domains::update_user_supplied),
                     ),
+            )
+            .route(
+                "/",
+                web::get().to(|| async {
+                    HttpResponse::Ok().body(include_str!("../../public/index.html"))
+                }),
             )
     })
     .bind(listen)?

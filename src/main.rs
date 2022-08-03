@@ -36,11 +36,7 @@ async fn main() -> Result<(), DynIpError> {
 
     let shared_config = aws_config::from_env().load().await;
     let client = Client::new(&shared_config);
-    let r53 = Route53 {
-        client,
-        hosted_zone_id,
-        domain_name,
-    };
+    let r53 = Route53::new(client, hosted_zone_id, domain_name)?;
     server::api::start(
         &listen,
         r53,

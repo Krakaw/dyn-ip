@@ -1,10 +1,12 @@
-use actix_web::{web, HttpRequest, Responder, Result};
-use aws_sdk_route53::model::ChangeAction;
-use std::net::IpAddr;
-
 use crate::aws::record::Record;
 use crate::DynIpError::{DomainHashNotFound, MissingIp};
-use crate::{ApiConfig, Route53};
+use crate::{ApiConfig, DomainParse, DynIpError, Route53};
+use actix_web::{web, HttpRequest, Responder, Result};
+use addr::parse_domain_name;
+use aws_sdk_route53::model::ChangeAction;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use std::net::IpAddr;
 
 pub async fn index(
     route_53: web::Data<Route53>,
@@ -35,6 +37,7 @@ pub async fn update_user_supplied(
     let (id, ip) = id_ip.into_inner();
     _update_inner(route_53, config, id, ip.to_string()).await
 }
+
 async fn _update_inner(
     route_53: web::Data<Route53>,
     config: web::Data<ApiConfig>,
@@ -53,4 +56,38 @@ async fn _update_inner(
         return Ok(web::Json(display_record));
     }
     Err(DomainHashNotFound.into())
+}
+
+#[derive(Deserialize)]
+pub struct AddQuery {
+    pub domain: String,
+    pub ip: Option<IpAddr>,
+}
+
+pub async fn add(
+    req: HttpRequest,
+    route_53: web::Data<Route53>,
+    config: web::Data<ApiConfig>,
+    domain_ip: web::Query<AddQuery>,
+) -> Result<impl Responder> {
+    let domain_ip = domain_ip.into_inner();
+    let ip = domain_ip
+        .ip
+        .ok_or_else(|| req.peer_addr().map(|p| p.ip()))
+        .ok()
+        .map(|ip| ip.to_string())
+        .ok_or(DynIpError::MissingIp)?;
+    let domain = parse_domain_name(&domain_ip.domain)
+        .map_err(|e| DomainParse(e.to_string()))?
+        .to_string();
+    let record = Record {
+        domain,
+        ip,
+        ..Record::default()
+    };
+    route_53
+        .update_record(ChangeAction::Upsert, record.clone())
+        .await?;
+
+    Ok(web::Json(record.for_display(&config.salt)))
 }

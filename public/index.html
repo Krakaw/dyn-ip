@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+    <title>Dyn-Ip</title>
+</head>
+<body>
+<section></section>
+<script>
+    
+    async function getDomains() {
+        const result = await fetch('/domains');
+        const domains = await result.json();
+        return domains;
+    }
+    
+    function init() {
+        getDomains().then(d => {
+            
+        });
+    }
+    init();
+</script>
+</body>
+</html>

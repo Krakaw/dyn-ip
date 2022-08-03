@@ -51,8 +51,9 @@ impl From<Record> for ResourceRecordSet {
     }
 }
 
-impl From<ResourceRecordSet> for Record {
-    fn from(r: ResourceRecordSet) -> Self {
+impl From<&ResourceRecordSet> for Record {
+    fn from(r: &ResourceRecordSet) -> Self {
+        let r = r.clone();
         Record {
             domain: r.name.unwrap_or_default(),
             record_type: r.r#type.unwrap_or(RrType::A).as_str().to_string(),
