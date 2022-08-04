@@ -1,0 +1,7 @@
+target/
+.idea
+.git
+.code
+.env
+README.md
+.env.sample
