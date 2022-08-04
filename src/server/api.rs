@@ -10,6 +10,7 @@ use log::info;
 
 use crate::server::auth::Auth;
 use crate::server::routes;
+use crate::server::routes::admin;
 use crate::{DynIpError, Route53};
 
 #[derive(Clone)]
@@ -46,7 +47,6 @@ pub async fn start<'a>(
     info!("Starting server on {:?}", listen);
     HttpServer::new(move || {
         let auth = HttpAuthentication::basic(validator);
-
         App::new()
             .wrap(Logger::default())
             .app_data(web::Data::new(api_config.clone()))
@@ -54,12 +54,7 @@ pub async fn start<'a>(
             .service(
                 web::scope("/api")
                     .wrap(Condition::new(api_config.auth.has_credentials(), auth))
-                    .route(
-                        "/admin",
-                        web::get().to(|| async {
-                            HttpResponse::Ok().body(include_str!("../../public/index.html"))
-                        }),
-                    )
+                    .route("/admin", web::get().to(admin::index))
                     .service(
                         web::scope("/domains")
                             .route("", web::get().to(routes::domains::index))

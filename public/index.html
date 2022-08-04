@@ -77,9 +77,9 @@
         <thead>
         <tr>
             <th>Add New Domain</th>
-            <th><input placeholder="Subdomain" type="text"/></th>
-            <th><input placeholder="ip" type="text"/></th>
-            <th><button>Create</button></th>
+            <th><label><input placeholder="subdomain" id="create-domain" type="text"/>.<!--DOMAIN--></label></th>
+            <th><input placeholder="ip" id="create-ip" type="text"/></th>
+            <th><button onclick="createDomain()">Create</button></th>
         </tr>
         <tr>
             <th>Domain</th>
@@ -96,33 +96,69 @@
 </section>
 <script>
 
+    const body = document.getElementById('body');
     async function getDomains() {
         const result = await fetch('/api/domains');
         const domains = await result.json();
         return domains;
     }
 
+    function createDomain() {
+        const createDomainInput = document.getElementById('create-domain');
+        const domain = createDomainInput.value;
+        const createIpInput = document.getElementById('create-ip');
+        const ip = createIpInput.value;
+        setLoading();
+        let url = `/api/domains?domain=${domain}`;
+        if (ip) {
+            url = url + `&ip=${ip}`;
+        }
+
+        fetch(url, {
+            method: 'POST',
+        }).then(r => {
+            if (r.ok) {
+               createIpInput.value = '';
+               createDomainInput.value = '';
+            }
+        }).finally(_r => {
+            init()
+        })
+    }
+
     function deleteDomain(id) {
+        setLoading();
         fetch(`/api/domains/${id}`, {
             method: 'DELETE'
-        }).then(r => {
-            console.log(r);
+        }).finally(r => {
             init();
         })
     }
+
+    function updateDomain(id) {
+        setLoading();
+        const ip = document.getElementById(id).value;
+        fetch(`/?id=${id}&ip=${ip}`, {
+            method: 'PATCH'
+        }).finally(r => {
+            init();
+        })
+    }
+
     function generateRows(domains) {
-        const body = document.getElementById('body');
         body.innerHTML = '';
         domains.forEach(domain => {
             const row = document.createElement('tr');
-            row.innerHTML = `<td>${domain.domain}</td><td>${domain.id}</td><td>${domain.ip}</td><td><button onclick="deleteDomain('${domain.id}')">X</button></td>`;
+            row.innerHTML = `<td><a href="http://${domain.domain}" target="_blank">${domain.domain}</a> </td><td>${domain.id}</td><td><input type="text" id="${domain.id}" value="${domain.ip}" /><button onclick="updateDomain('${domain.id}')">^</button></td><td><button onclick="deleteDomain('${domain.id}')">X</button></td>`;
             body.appendChild(row);
         })
     }
 
-    function init() {
-        const body = document.getElementById('body');
+    function setLoading() {
         body.innerHTML = '<tr><td colspan="4">Loading...</td>';
+    }
+    function init() {
+        setLoading();
         getDomains().then(domains => {
             generateRows(domains)
         });
