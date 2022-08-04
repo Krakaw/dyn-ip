@@ -2,13 +2,78 @@
 <html>
 <head>
     <style>
+        table.styled-table {
+            border-collapse: collapse;
+            margin: 0px 0px 25px 0;
+            font-size: 0.9em;
+            font-family: sans-serif;
+            /*min-width: 400px;*/
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+        }
+
+        table.styled-table.sticky thead tr:not(.no-sticky) {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        table.styled-table thead tr {
+            background-color: #009879;
+            color: #ffffff;
+            text-align: left;
+        }
+
+        table.styled-table th,
+        table.styled-table td {
+            padding: 12px 15px;
+        }
+
+        table.no-height-fill.styled-table td {
+            padding: 5px;
+        }
+
+        table.no-height-fill.styled-table td, table.no-height-fill.styled-table tr {
+            display: block;
+        }
+
+        table.styled-table td:first-of-type {
+            padding: 3px;
+        }
+
+        table.styled-table tbody tr {
+            border-bottom: 1px solid #dddddd;
+
+        }
+
+        table.styled-table tbody tr.loading, table.styled-table tbody td.loading {
+            opacity: 0.6;
+        }
+
+        table.styled-table tbody tr.error {
+            color: #ff5555;
+            opacity: 0.8;
+        }
+
+        table.styled-table tbody tr:nth-of-type(even) {
+            background-color: #f3f3f3;
+        }
+
+        table.styled-table tbody tr:last-of-type {
+            border-bottom: 2px solid #009879;
+        }
+
+
+        table.styled-table tbody tr.active-row {
+            font-weight: bold;
+            color: #009879;
+        }
 
     </style>
     <title>dyn-ip</title>
 </head>
 <body>
 <section>
-    <table>
+    <table style="width: 100%" class="styled-table sticky">
         <thead>
         <tr>
             <th>Add New Domain</th>

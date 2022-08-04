@@ -17,6 +17,8 @@ pub enum DynIpError {
     FileIO(#[from] std::io::Error),
     #[error("Missing Update IP Address")]
     MissingIp,
+    #[error("Missing ID")]
+    MissingId,
     #[error("Domain Hash Not Found")]
     DomainHashNotFound,
 }

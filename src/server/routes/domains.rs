@@ -1,5 +1,5 @@
 use crate::aws::record::Record;
-use crate::DynIpError::{DomainHashNotFound, MissingIp};
+use crate::DynIpError::{DomainHashNotFound, MissingId, MissingIp};
 use crate::{ApiConfig, DomainParse, DynIpError, Route53};
 use actix_web::{web, HttpRequest, Responder, Result};
 use addr::parse_domain_name;
@@ -8,6 +8,19 @@ use serde::Deserialize;
 use serde_json::json;
 use std::net::IpAddr;
 
+#[derive(Deserialize)]
+pub struct AddQuery {
+    pub domain: String,
+    pub ip: Option<IpAddr>,
+}
+
+#[derive(Deserialize)]
+pub struct UpdateQuery {
+    pub key: Option<String>,
+    pub id: Option<String>,
+    pub ip: Option<IpAddr>,
+}
+
 pub async fn index(
     route_53: web::Data<Route53>,
     config: web::Data<ApiConfig>,
@@ -15,6 +28,7 @@ pub async fn index(
     let records = route_53.list_display_records(&config.salt).await?;
     Ok(web::Json(records))
 }
+
 pub async fn destroy(
     route_53: web::Data<Route53>,
     config: web::Data<ApiConfig>,
@@ -23,6 +37,23 @@ pub async fn destroy(
     route_53.delete(&config.salt, &id.into_inner()).await?;
     Ok(web::Json(json!({})))
 }
+
+pub async fn update(
+    route_53: web::Data<Route53>,
+    config: web::Data<ApiConfig>,
+    query: web::Query<UpdateQuery>,
+    req: HttpRequest,
+) -> Result<impl Responder> {
+    let query = query.into_inner();
+    let ip = query
+        .ip
+        .or_else(|| req.peer_addr().map(|p| p.ip()))
+        .ok_or(MissingIp)?
+        .to_string();
+    let id = query.key.or(query.id).ok_or(MissingId)?;
+    _update_inner(route_53, config, id, ip).await
+}
+
 pub async fn update_with_peer_address(
     route_53: web::Data<Route53>,
     config: web::Data<ApiConfig>,
@@ -63,12 +94,6 @@ async fn _update_inner(
         return Ok(web::Json(display_record));
     }
     Err(DomainHashNotFound.into())
-}
-
-#[derive(Deserialize)]
-pub struct AddQuery {
-    pub domain: String,
-    pub ip: Option<IpAddr>,
 }
 
 pub async fn add(

@@ -78,13 +78,16 @@ pub async fn start<'a>(
                             ),
                     ),
             )
+            // For backwards compatibility
+            .route("/update.php", web::get().to(routes::domains::update))
+            .route("/", web::patch().to(routes::domains::update))
             .route(
                 "/",
                 web::get().to(|req: HttpRequest| async move {
                     let ip = req
                         .peer_addr()
                         .map(|p| p.ip().to_string())
-                        .unwrap_or("".to_string());
+                        .unwrap_or_else(|| "".to_string());
                     HttpResponse::Ok().body(ip)
                 }),
             )
