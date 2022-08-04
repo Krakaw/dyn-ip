@@ -3,6 +3,7 @@ use crate::{DomainParse, DynIpError};
 use addr::parse_domain_name;
 use aws_sdk_route53::model::{Change, ChangeAction, ChangeBatch};
 use aws_sdk_route53::Client;
+use log::info;
 
 #[derive(Clone)]
 pub struct Route53 {
@@ -34,6 +35,7 @@ impl Route53 {
         change_action: ChangeAction,
         record: Record,
     ) -> Result<(), DynIpError> {
+        info!("Updating Record: {:?} {:?}", change_action, record);
         let domain_name = self.domain_name.clone();
         let record = if !record.domain.ends_with(&domain_name) {
             Record {
@@ -95,5 +97,20 @@ impl Route53 {
             }
         }
         Ok(result)
+    }
+
+    pub async fn delete(&self, salt: &str, id_or_domain: &str) -> Result<(), DynIpError> {
+        let records = self.list_display_records(salt).await?;
+        if let Some(record) = records
+            .iter()
+            .find(|r| r.id == id_or_domain || r.domain == id_or_domain)
+        {
+            info!("Deleting record: {:?}", record);
+            self.update_record(ChangeAction::Delete, record.into())
+                .await?;
+            Ok(())
+        } else {
+            Err(DynIpError::DomainHashNotFound)
+        }
     }
 }

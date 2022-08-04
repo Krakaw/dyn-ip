@@ -4,7 +4,7 @@ use crate::{ApiConfig, DomainParse, DynIpError, Route53};
 use actix_web::{web, HttpRequest, Responder, Result};
 use addr::parse_domain_name;
 use aws_sdk_route53::model::ChangeAction;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::json;
 use std::net::IpAddr;
 
@@ -15,7 +15,14 @@ pub async fn index(
     let records = route_53.list_display_records(&config.salt).await?;
     Ok(web::Json(records))
 }
-
+pub async fn destroy(
+    route_53: web::Data<Route53>,
+    config: web::Data<ApiConfig>,
+    id: web::Path<String>,
+) -> Result<impl Responder> {
+    route_53.delete(&config.salt, &id.into_inner()).await?;
+    Ok(web::Json(json!({})))
+}
 pub async fn update_with_peer_address(
     route_53: web::Data<Route53>,
     config: web::Data<ApiConfig>,

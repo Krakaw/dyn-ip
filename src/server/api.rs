@@ -64,9 +64,13 @@ pub async fn start<'a>(
                         web::scope("/domains")
                             .route("", web::get().to(routes::domains::index))
                             .route("", web::post().to(routes::domains::add))
-                            .route(
-                                "/{id}",
-                                web::patch().to(routes::domains::update_with_peer_address),
+                            .service(
+                                web::scope("/{id}")
+                                    .route(
+                                        "",
+                                        web::patch().to(routes::domains::update_with_peer_address),
+                                    )
+                                    .route("", web::delete().to(routes::domains::destroy)),
                             )
                             .route(
                                 "/{id}/{ip}",
