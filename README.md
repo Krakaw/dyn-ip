@@ -1,4 +1,4 @@
-# Dyn-ip
+# dyn-ip
 
 A dynamic IP service that uses Route53 as the provider.
 
@@ -18,9 +18,11 @@ A dynamic IP service that uses Route53 as the provider.
 
     # Update a subdomain with current client ip
     curl localhost:8080/api/domains/{domain_id_hash} -X PATCH
+    curl localhost:8080/?id={domain_id_hash} -X PATCH
 
     # Update a subdomain with a specified ip
     curl localhost:8080/api/domains/{domain_id_hash}/{ip} -X PATCH
+    curl localhost:8080/?id={domain_id_hash}&ip={ip} -X PATCH
 
     # Test it
     dig subdomain.example.com
