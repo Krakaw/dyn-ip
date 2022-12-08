@@ -11,12 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
+
+      - name: Build and Publish Tag Docker image
+        uses: VaultVulp/gp-docker-action@1.1.12
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          run: |
-            docker build . --tag ghcr.io/Krakaw/dyn-ip:latest
-            docker push ghcr.io/Krakaw/dyn-ip:latest
+          github-token: ${{ secrets.GITHUB_TOKEN }} # Provide GITHUB_TOKEN to login into the GitHub Packages
+          image-name: dyn-ip # Provide only Docker image name
+          extract-git-tag: true # Provide flag to extract Docker image tag from git reference
