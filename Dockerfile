@@ -6,7 +6,8 @@ COPY ./Cargo.toml .
 RUN mkdir src &&  echo "pub fn main() {}" >> src/main.rs
 COPY public public
 COPY src src
-RUN cargo build  --release
+ARG CARGO_NET_GIT_FETCH_WITH_CLI=true
+RUN cargo build --release
 
 
 FROM debian:bullseye-slim

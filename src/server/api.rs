@@ -79,10 +79,13 @@ pub async fn start<'a>(
             .route(
                 "/",
                 web::get().to(|req: HttpRequest| async move {
-                    let ip = req
-                        .peer_addr()
-                        .map(|p| p.ip().to_string())
+                    let headers = req.headers();
+                    let ip = headers
+                        .get("X-Real-IP")
+                        .or_else(|| headers.get("X-Forwarded-For"))
+                        .and_then(|h| h.to_str().ok().map(|s| s.to_string()))
                         .unwrap_or_else(|| "".to_string());
+
                     HttpResponse::Ok().body(ip)
                 }),
             )
