@@ -1,4 +1,5 @@
 use crate::aws::record::Record;
+use crate::server::ip::get_ip_from_request;
 use crate::DynIpError::{DomainHashNotFound, MissingId, MissingIp};
 use crate::{ApiConfig, DomainParse, DynIpError, Route53};
 use actix_web::{web, HttpRequest, Responder, Result};
@@ -45,11 +46,7 @@ pub async fn update(
     req: HttpRequest,
 ) -> Result<impl Responder> {
     let query = query.into_inner();
-    let ip = query
-        .ip
-        .or_else(|| req.peer_addr().map(|p| p.ip()))
-        .ok_or(MissingIp)?
-        .to_string();
+    let ip = get_ip_from_request(&req).ok_or(MissingIp)?.to_string();
     let id = query.key.or(query.id).ok_or(MissingId)?;
     _update_inner(route_53, config, id, ip).await
 }
@@ -60,10 +57,7 @@ pub async fn update_with_peer_address(
     id: web::Path<String>,
     req: HttpRequest,
 ) -> Result<impl Responder> {
-    let ip = req
-        .peer_addr()
-        .map(|p| p.ip().to_string())
-        .ok_or(MissingIp)?;
+    let ip = get_ip_from_request(&req).ok_or(MissingIp)?;
     _update_inner(route_53, config, id.into_inner(), ip).await
 }
 
@@ -105,7 +99,7 @@ pub async fn add(
     let domain_ip = domain_ip.into_inner();
     let ip = domain_ip
         .ip
-        .ok_or_else(|| req.peer_addr().map(|p| p.ip()))
+        .ok_or_else(|| get_ip_from_request(&req).ok_or(MissingIp))
         .ok()
         .map(|ip| ip.to_string())
         .ok_or(DynIpError::MissingIp)?;

@@ -9,6 +9,7 @@ use actix_web_httpauth::middleware::HttpAuthentication;
 use log::info;
 
 use crate::server::auth::Auth;
+use crate::server::ip::get_ip_from_request;
 use crate::server::routes;
 use crate::server::routes::admin;
 use crate::{DynIpError, Route53};
@@ -79,14 +80,8 @@ pub async fn start<'a>(
             .route(
                 "/",
                 web::get().to(|req: HttpRequest| async move {
-                    let headers = req.headers();
-                    let ip = headers
-                        .get("X-Real-IP")
-                        .or_else(|| headers.get("X-Forwarded-For"))
-                        .and_then(|h| h.to_str().ok().map(|s| s.to_string()))
-                        .unwrap_or_else(|| "".to_string());
-
-                    HttpResponse::Ok().body(ip)
+                    let ip = get_ip_from_request(&req);
+                    HttpResponse::Ok().body(ip.unwrap_or_default())
                 }),
             )
     })
