@@ -46,7 +46,11 @@ pub async fn update(
     req: HttpRequest,
 ) -> Result<impl Responder> {
     let query = query.into_inner();
-    let ip = get_ip_from_request(&req).ok_or(MissingIp)?.to_string();
+    let ip = query
+        .ip
+        .map(|ip| ip.to_string())
+        .or_else(|| get_ip_from_request(&req))
+        .ok_or(MissingIp)?;
     let id = query.key.or(query.id).ok_or(MissingId)?;
     _update_inner(route_53, config, id, ip).await
 }
