@@ -1,18 +1,21 @@
 use crate::aws::record::Record;
 use crate::server::ip::get_ip_from_request;
 use crate::DynIpError::{DomainHashNotFound, MissingId, MissingIp};
-use crate::{ApiConfig, DomainParse, DynIpError, Route53};
+use crate::{ApiConfig, DomainParse, Route53};
 use actix_web::{web, HttpRequest, Responder, Result};
 use addr::parse_domain_name;
-use aws_sdk_route53::model::ChangeAction;
+use aws_sdk_route53::model::{ChangeAction, RrType};
 use serde::Deserialize;
 use serde_json::json;
 use std::net::IpAddr;
+use std::str::FromStr;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct AddQuery {
     pub domain: String,
     pub ip: Option<IpAddr>,
+    pub host: Option<String>,
+    pub record_type: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -100,21 +103,33 @@ pub async fn add(
     config: web::Data<ApiConfig>,
     domain_ip: web::Query<AddQuery>,
 ) -> Result<impl Responder> {
+    eprintln!("domain_ip.clone = {:?}", domain_ip);
+
     let domain_ip = domain_ip.into_inner();
-    let ip = domain_ip
-        .ip
-        .ok_or_else(|| get_ip_from_request(&req).ok_or(MissingIp))
-        .ok()
-        .map(|ip| ip.to_string())
-        .ok_or(DynIpError::MissingIp)?;
+
     let domain = parse_domain_name(&domain_ip.domain)
         .map_err(|e| DomainParse(e.to_string()))?
         .to_string();
+    let record_type = domain_ip
+        .record_type
+        .and_then(|s| RrType::from_str(&s).ok())
+        .unwrap_or(RrType::A);
+    let ip = match record_type {
+        RrType::A => domain_ip
+            .ip
+            .ok_or_else(|| get_ip_from_request(&req).ok_or(MissingIp))
+            .ok()
+            .map(|ip| ip.to_string())
+            .ok_or(MissingIp)?,
+        _ => domain_ip.host.ok_or(MissingIp)?,
+    };
     let record = Record {
         domain,
         ip,
+        record_type: record_type.as_str().to_string(),
         ..Record::default()
     };
+
     route_53
         .update_record(ChangeAction::Upsert, record.clone())
         .await?;
