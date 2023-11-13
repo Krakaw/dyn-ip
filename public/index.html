@@ -78,8 +78,16 @@
         <tr>
             <th>Add New Domain</th>
             <th><label><input placeholder="subdomain" id="create-domain" type="text"/>.<!--DOMAIN--></label></th>
-            <th><input placeholder="ip" id="create-ip" type="text"/></th>
-            <th><button onclick="createDomain()">Create</button></th>
+
+            <th>
+                <label>Record Type<select id="create-record-type">
+                    <option value="A">A</option>
+                    <option value="CNAME">CNAME</option>
+                </select></label>
+                <input placeholder="ip or host" id="create-ip" type="text"/></th>
+            <th>
+                <button onclick="createDomain()">Create</button>
+            </th>
         </tr>
         <tr>
             <th>Domain</th>
@@ -95,6 +103,7 @@
 <script>
 
     const body = document.getElementById('body');
+
     async function getDomains() {
         const result = await fetch('/api/domains');
         const domains = await result.json();
@@ -104,20 +113,24 @@
     function createDomain() {
         const createDomainInput = document.getElementById('create-domain');
         const domain = createDomainInput.value;
+        const createRecordTypeInput = document.getElementById('create-record-type');
+        const recordType = createRecordTypeInput.value;
         const createIpInput = document.getElementById('create-ip');
         const ip = createIpInput.value;
         setLoading();
-        let url = `/api/domains?domain=${domain}`;
+        let url = `/api/domains?domain=${domain}&record_type=${recordType}`;
         if (ip) {
-            url = url + `&ip=${ip}`;
+            const key = recordType === 'A' ? 'ip' : 'host';
+            url = url + `&${key}=${ip}`;
         }
 
         fetch(url, {
             method: 'POST',
         }).then(r => {
             if (r.ok) {
-               createIpInput.value = '';
-               createDomainInput.value = '';
+                createIpInput.value = '';
+                createDomainInput.value = '';
+                createRecordTypeInput.value = '';
             }
         }).finally(_r => {
             init()
@@ -155,12 +168,14 @@
     function setLoading() {
         body.innerHTML = '<tr><td colspan="4">Loading...</td>';
     }
+
     function init() {
         setLoading();
         getDomains().then(domains => {
             generateRows(domains)
         });
     }
+
     init();
 </script>
 </body>

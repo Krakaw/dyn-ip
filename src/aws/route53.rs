@@ -1,7 +1,8 @@
 use crate::aws::record::{DisplayRecord, Record};
+use crate::error::DynIpError::Route53BuildError;
 use crate::{DomainParse, DynIpError};
 use addr::parse_domain_name;
-use aws_sdk_route53::model::{Change, ChangeAction, ChangeBatch};
+use aws_sdk_route53::types::{Change, ChangeAction, ChangeBatch};
 use aws_sdk_route53::Client;
 use log::info;
 
@@ -48,8 +49,13 @@ impl Route53 {
         let change = Change::builder()
             .action(change_action)
             .resource_record_set(record.into())
-            .build();
-        let change_batch = ChangeBatch::builder().changes(change).build();
+            .build()
+            .map_err(|e| Route53BuildError(e.to_string()))?;
+
+        let change_batch = ChangeBatch::builder()
+            .changes(change)
+            .build()
+            .map_err(|e| Route53BuildError(e.to_string()))?;
         self.client
             .change_resource_record_sets()
             .hosted_zone_id(self.hosted_zone_id.clone())
@@ -85,9 +91,8 @@ impl Route53 {
                 .map_err(|e| DynIpError::AwsSdk(e.to_string()))?;
             for record in output
                 .resource_record_sets
-                .unwrap_or_default()
                 .iter()
-                .filter(|r| r.name != Some(domain_name.clone()))
+                .filter(|r| r.name != domain_name.clone())
             {
                 result.push(record.into())
             }

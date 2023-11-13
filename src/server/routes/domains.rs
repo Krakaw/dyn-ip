@@ -4,7 +4,7 @@ use crate::DynIpError::{DomainHashNotFound, MissingId, MissingIp};
 use crate::{ApiConfig, DomainParse, Route53};
 use actix_web::{web, HttpRequest, Responder, Result};
 use addr::parse_domain_name;
-use aws_sdk_route53::model::{ChangeAction, RrType};
+use aws_sdk_route53::types::{ChangeAction, RrType};
 use serde::Deserialize;
 use serde_json::json;
 use std::net::IpAddr;

@@ -21,5 +21,9 @@ pub enum DynIpError {
     MissingId,
     #[error("Domain Hash Not Found")]
     DomainHashNotFound,
+    #[error("Route53 Error: {0}")]
+    Route53(#[from] aws_sdk_route53::Error),
+    #[error("Route53 Build Error: {0}")]
+    Route53BuildError(String),
 }
 impl actix_web::error::ResponseError for DynIpError {}

@@ -1,4 +1,4 @@
-use aws_sdk_route53::model::{ResourceRecord, ResourceRecordSet, RrType};
+use aws_sdk_route53::types::{ResourceRecord, ResourceRecordSet, RrType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,13 +40,17 @@ impl Default for Record {
 }
 impl From<Record> for ResourceRecordSet {
     fn from(r: Record) -> Self {
-        let resource_record_a = ResourceRecord::builder().value(r.ip.to_string()).build();
+        let resource_record_a = ResourceRecord::builder()
+            .value(r.ip.to_string())
+            .build()
+            .unwrap();
         let resource_record_set_a = ResourceRecordSet::builder()
             .name(r.domain)
             .r#type(r.record_type.as_str().into())
             .ttl(r.ttl)
             .resource_records(resource_record_a)
-            .build();
+            .build()
+            .unwrap();
         resource_record_set_a
     }
 }
@@ -55,14 +59,11 @@ impl From<&ResourceRecordSet> for Record {
     fn from(r: &ResourceRecordSet) -> Self {
         let r = r.clone();
         Record {
-            domain: r.name.unwrap_or_default(),
-            record_type: r.r#type.unwrap_or(RrType::A).as_str().to_string(),
+            domain: r.name,
+            record_type: r.r#type.as_str().to_string(),
             ip: r
                 .resource_records
-                .map(|v| {
-                    v.first()
-                        .map(|i| i.value.clone().unwrap_or_else(|| "0.0.0.0".to_string()))
-                })
+                .map(|v| v.first().map(|i| i.value.clone()))
                 .unwrap_or_default()
                 .unwrap_or_default(),
             ttl: r.ttl.unwrap_or(60),
