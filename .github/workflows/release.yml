@@ -38,11 +38,22 @@ jobs:
           cargo build --release --target ${{ matrix.target }}
           cp target/${{ matrix.target }}/release/dyn-ip dist/dyn-ip-${{ matrix.target }}
 
-      - name: Upload Binary
+      - name: Debug: List Files After Build
+        run: ls -lR
+
+      - name: Upload Binary (Normal)
+        if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' }}
         uses: actions/upload-artifact@v3
         with:
-          name: dyn-ip-${{ matrix.target }}
-          path: dist/dyn-ip-${{ matrix.target }}
+          name: dyn-ip-x86_64-unknown-linux-gnu
+          path: dist/dyn-ip-x86_64-unknown-linux-gnu
+
+      - name: Upload Binary (Compatibility)
+        if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: dyn-ip-x86_64-unknown-linux-musl
+          path: dist/dyn-ip-x86_64-unknown-linux-musl
 
   release:
     needs: build
@@ -52,9 +63,29 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: dyn-ip-x86_64-unknown-linux-gnu
-      - uses: actions/download-artifact@v3
+
+      - name: Download Compatibility Binary
+        uses: actions/download-artifact@v3
         with:
           name: dyn-ip-x86_64-unknown-linux-musl
+
+      - name: Debug: List Downloaded Files
+        run: ls -l
+
+      - name: Ensure Dist Directory and Move Files
+        run: |
+          mkdir -p dist
+          mv dyn-ip-x86_64-unknown-linux-gnu dist/
+          mv dyn-ip-x86_64-unknown-linux-musl dist/
+
+      - name: Debug: List Files in Dist
+        run: ls -l dist
+
+      - name: Debug: Check Working Directory
+        run: pwd
+
+      - name: Debug: List All Files Recursively
+        run: ls -lR
 
       - name: Publish Release
         uses: softprops/action-gh-release@v1
