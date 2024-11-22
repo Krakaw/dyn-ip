@@ -1,0 +1,3 @@
+#!/bin/bash
+
+curl -X PATCH https://example.com?id="$GENERATED_ID"
