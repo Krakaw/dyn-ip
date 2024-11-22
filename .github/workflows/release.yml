@@ -25,18 +25,18 @@ jobs:
           override: true
 
       - name: Add Musl Target for Compatibility
-        if: matrix.target == 'x86_64-unknown-linux-musl'
+        if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
         run: rustup target add x86_64-unknown-linux-musl
 
       - name: Install Dependencies for Musl
-        if: matrix.target == 'x86_64-unknown-linux-musl'
+        if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
         run: sudo apt-get update && sudo apt-get install -y musl-tools
 
       - name: Build Binary
         run: |
           mkdir -p dist
-          cargo build --release --target ${matrix.target}
-          cp target/${matrix.target}/release/dyn-ip dist/dyn-ip-${matrix.target}
+          cargo build --release --target ${{ matrix.target }}
+          cp target/${{ matrix.target }}/release/dyn-ip dist/dyn-ip-${{ matrix.target }}
 
       - name: Upload Binary
         uses: actions/upload-artifact@v3
