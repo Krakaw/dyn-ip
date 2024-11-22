@@ -38,7 +38,7 @@ jobs:
           cargo build --release --target ${{ matrix.target }}
           cp target/${{ matrix.target }}/release/dyn-ip dist/dyn-ip-${{ matrix.target }}
 
-      - name: Debug: List Files After Build
+      - name: Debug -List Files After Build
         run: ls -lR
 
       - name: Upload Binary (Normal)
@@ -69,7 +69,7 @@ jobs:
         with:
           name: dyn-ip-x86_64-unknown-linux-musl
 
-      - name: Debug: List Downloaded Files
+      - name: Debug -List Downloaded Files
         run: ls -l
 
       - name: Ensure Dist Directory and Move Files
@@ -78,13 +78,13 @@ jobs:
           mv dyn-ip-x86_64-unknown-linux-gnu dist/
           mv dyn-ip-x86_64-unknown-linux-musl dist/
 
-      - name: Debug: List Files in Dist
+      - name: Debug -List Files in Dist
         run: ls -l dist
 
-      - name: Debug: Check Working Directory
+      - name: Debug -Check Working Directory
         run: pwd
 
-      - name: Debug: List All Files Recursively
+      - name: Debug -List All Files Recursively
         run: ls -lR
 
       - name: Publish Release
