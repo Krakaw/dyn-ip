@@ -1,22 +1,66 @@
-name: Build release
+name: Build and Release
+
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*' # Trigger on version tags, e.g., v1.0.0
 
 jobs:
-  release:
-    name: release ${{ matrix.target }}
+  build:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        target: [x86_64-unknown-linux-musl]
+        target:
+          - "x86_64-unknown-linux-gnu"    # Normal version
+          - "x86_64-unknown-linux-musl"   # Compatibility version
     steps:
-      - uses: actions/checkout@master
-      - name: Compile and release
-        uses: rust-build/rust-build.action@v1.4.0
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Add Musl Target for Compatibility
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: rustup target add x86_64-unknown-linux-musl
+
+      - name: Install Dependencies for Musl
+        if: matrix.target == 'x86_64-unknown-linux-musl'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Build Binary
+        run: |
+          mkdir -p dist
+          cargo build --release --target ${matrix.target}
+          cp target/${matrix.target}/release/dyn-ip dist/dyn-ip-${matrix.target}
+
+      - name: Upload Binary
+        uses: actions/upload-artifact@v3
+        with:
+          name: dyn-ip-${{ matrix.target }}
+          path: dist/dyn-ip-${{ matrix.target }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download All Binaries
+        uses: actions/download-artifact@v3
+        with:
+          name: dyn-ip-x86_64-unknown-linux-gnu
+      - uses: actions/download-artifact@v3
+        with:
+          name: dyn-ip-x86_64-unknown-linux-musl
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/dyn-ip-x86_64-unknown-linux-gnu
+            dist/dyn-ip-x86_64-unknown-linux-musl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          RUSTTARGET: ${{ matrix.target }}
-          EXTRA_FILES: "README.md"
