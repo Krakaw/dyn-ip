@@ -1,5 +1,12 @@
 use std::net::SocketAddr;
 
+use crate::dns::dns_provider::DnsProvider;
+use crate::dns::r53::provider::Route53;
+use crate::server::auth::Auth;
+use crate::server::ip::get_ip_from_request;
+use crate::server::routes;
+use crate::server::routes::admin;
+use crate::DynIpError;
 use actix_web::dev::ServiceRequest;
 use actix_web::middleware::{Condition, Logger};
 use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer};
@@ -7,12 +14,6 @@ use actix_web_httpauth::extractors::basic::BasicAuth;
 use actix_web_httpauth::extractors::{basic, AuthenticationError};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use log::info;
-
-use crate::server::auth::Auth;
-use crate::server::ip::get_ip_from_request;
-use crate::server::routes;
-use crate::server::routes::admin;
-use crate::{DynIpError, Route53};
 
 #[derive(Clone)]
 pub struct ApiConfig {
@@ -55,7 +56,11 @@ pub async fn start<'a>(
             .service(
                 web::scope("/api")
                     .wrap(Condition::new(api_config.auth.has_credentials(), auth))
-                    .route("/admin", web::get().to(admin::index))
+                    .route(
+                        "/admin",
+                        web::get()
+                            .to::<_, (actix_web::web::Data<Box<dyn DnsProvider>>,)>(admin::index),
+                    )
                     .service(
                         web::scope("/domains")
                             .route("", web::get().to(routes::domains::index))

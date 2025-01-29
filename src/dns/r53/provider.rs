@@ -1,4 +1,6 @@
-use crate::aws::record::{DisplayRecord, Record};
+use crate::dns::dns_provider::DnsProvider;
+use crate::dns::record::{DisplayRecord, Record};
+
 use crate::error::DynIpError::Route53BuildError;
 use crate::{DomainParse, DynIpError};
 use addr::parse_domain_name;
@@ -31,7 +33,13 @@ impl Route53 {
             domain_name,
         })
     }
-    pub async fn update_record(
+}
+impl DnsProvider for Route53 {
+    fn domain_name(&self) -> &str {
+        &self.domain_name
+    }
+
+    async fn update_record(
         &self,
         change_action: ChangeAction,
         record: Record,
@@ -67,7 +75,7 @@ impl Route53 {
         Ok(())
     }
 
-    pub async fn list_display_records(&self, salt: &str) -> Result<Vec<DisplayRecord>, DynIpError> {
+    async fn list_display_records(&self, salt: &str) -> Result<Vec<DisplayRecord>, DynIpError> {
         Ok(self
             .list_records()
             .await?
@@ -76,7 +84,7 @@ impl Route53 {
             .collect::<Vec<DisplayRecord>>())
     }
 
-    pub async fn list_records(&self) -> Result<Vec<Record>, DynIpError> {
+    async fn list_records(&self) -> Result<Vec<Record>, DynIpError> {
         let mut result = vec![];
         let mut next_page = None;
         let domain_name = self.domain_name.clone();
@@ -104,7 +112,7 @@ impl Route53 {
         Ok(result)
     }
 
-    pub async fn delete(&self, salt: &str, id_or_domain: &str) -> Result<(), DynIpError> {
+    async fn delete(&self, salt: &str, id_or_domain: &str) -> Result<(), DynIpError> {
         let records = self.list_display_records(salt).await?;
         if let Some(record) = records
             .iter()

@@ -1,17 +1,17 @@
 extern crate dotenv;
 
-use crate::aws::route53::Route53;
+use crate::dns::r53::provider::Route53;
+use crate::error::DynIpError;
+use crate::server::api::ApiConfig;
+use crate::server::auth::Auth;
 use crate::DynIpError::DomainParse;
+use aws_config::BehaviorVersion;
 use aws_sdk_route53::Client;
 use dotenv::dotenv;
 use env_logger::Env;
 use std::net::SocketAddr;
 
-use crate::error::DynIpError;
-use crate::server::api::ApiConfig;
-use crate::server::auth::Auth;
-
-mod aws;
+mod dns;
 mod error;
 mod server;
 
@@ -34,7 +34,7 @@ async fn main() -> Result<(), DynIpError> {
         .ok()
         .filter(|p| !p.is_empty());
 
-    let shared_config = aws_config::from_env().load().await;
+    let shared_config = aws_config::defaults(BehaviorVersion::latest()).load().await;
     let client = Client::new(&shared_config);
     let r53 = Route53::new(client, hosted_zone_id, domain_name)?;
     server::api::start(

@@ -1,7 +1,8 @@
-use crate::aws::record::Record;
+use crate::dns::dns_provider::DnsProvider;
+use crate::dns::record::Record;
 use crate::server::ip::get_ip_from_request;
 use crate::DynIpError::{DomainHashNotFound, MissingId, MissingIp};
-use crate::{ApiConfig, DomainParse, Route53};
+use crate::{ApiConfig, DomainParse};
 use actix_web::{web, HttpRequest, Responder, Result};
 use addr::parse_domain_name;
 use aws_sdk_route53::types::{ChangeAction, RrType};
@@ -26,7 +27,7 @@ pub struct UpdateQuery {
 }
 
 pub async fn index(
-    route_53: web::Data<Route53>,
+    route_53: web::Data<impl DnsProvider>,
     config: web::Data<ApiConfig>,
 ) -> Result<impl Responder> {
     let records = route_53.list_display_records(&config.salt).await?;
@@ -34,7 +35,7 @@ pub async fn index(
 }
 
 pub async fn destroy(
-    route_53: web::Data<Route53>,
+    route_53: web::Data<impl DnsProvider>,
     config: web::Data<ApiConfig>,
     id: web::Path<String>,
 ) -> Result<impl Responder> {
@@ -43,7 +44,7 @@ pub async fn destroy(
 }
 
 pub async fn update(
-    route_53: web::Data<Route53>,
+    route_53: web::Data<impl DnsProvider>,
     config: web::Data<ApiConfig>,
     query: web::Query<UpdateQuery>,
     req: HttpRequest,
@@ -59,7 +60,7 @@ pub async fn update(
 }
 
 pub async fn update_with_peer_address(
-    route_53: web::Data<Route53>,
+    route_53: web::Data<impl DnsProvider>,
     config: web::Data<ApiConfig>,
     id: web::Path<String>,
     req: HttpRequest,
@@ -69,7 +70,7 @@ pub async fn update_with_peer_address(
 }
 
 pub async fn update_user_supplied(
-    route_53: web::Data<Route53>,
+    route_53: web::Data<impl DnsProvider>,
     config: web::Data<ApiConfig>,
     id_ip: web::Path<(String, IpAddr)>,
 ) -> Result<impl Responder> {
@@ -78,7 +79,7 @@ pub async fn update_user_supplied(
 }
 
 async fn _update_inner(
-    route_53: web::Data<Route53>,
+    route_53: web::Data<impl DnsProvider>,
     config: web::Data<ApiConfig>,
     id: String,
     ip: String,
@@ -99,7 +100,7 @@ async fn _update_inner(
 
 pub async fn add(
     req: HttpRequest,
-    route_53: web::Data<Route53>,
+    route_53: web::Data<impl DnsProvider>,
     config: web::Data<ApiConfig>,
     domain_ip: web::Query<AddQuery>,
 ) -> Result<impl Responder> {
