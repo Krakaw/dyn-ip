@@ -131,6 +131,7 @@ impl Cloudflare {
     }
 
     async fn fetch_records_page(&self, page: u32) -> Result<Vec<Record>, DynIpError> {
+        // TODO: Use the pagination in the response instead of waiting for an empty result
         let url = format!(
             "https://api.cloudflare.com/client/v4/zones/{}/dns_records?page={}",
             self.zone_id, page
