@@ -8,11 +8,12 @@ use actix_web_httpauth::extractors::{basic, AuthenticationError};
 use actix_web_httpauth::middleware::HttpAuthentication;
 use log::info;
 
+use crate::aws::cloudflare::Cloudflare;
 use crate::server::auth::Auth;
 use crate::server::ip::get_ip_from_request;
 use crate::server::routes;
 use crate::server::routes::admin;
-use crate::{DynIpError, Route53};
+use crate::DynIpError;
 
 #[derive(Clone)]
 pub struct ApiConfig {
@@ -42,7 +43,7 @@ async fn validator(
 
 pub async fn start<'a>(
     listen: &SocketAddr,
-    route_53: Route53,
+    route_53: Cloudflare,
     api_config: ApiConfig,
 ) -> Result<(), DynIpError> {
     info!("Starting server on {:?}", listen);

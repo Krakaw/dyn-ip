@@ -1,7 +1,8 @@
+use crate::aws::cloudflare::Cloudflare;
 use crate::aws::record::Record;
 use crate::server::ip::get_ip_from_request;
 use crate::DynIpError::{DomainHashNotFound, MissingId, MissingIp};
-use crate::{ApiConfig, DomainParse, Route53};
+use crate::{ApiConfig, DomainParse};
 use actix_web::{web, HttpRequest, Responder, Result};
 use addr::parse_domain_name;
 use aws_sdk_route53::types::{ChangeAction, RrType};
@@ -26,7 +27,7 @@ pub struct UpdateQuery {
 }
 
 pub async fn index(
-    route_53: web::Data<Route53>,
+    route_53: web::Data<Cloudflare>,
     config: web::Data<ApiConfig>,
 ) -> Result<impl Responder> {
     let records = route_53.list_display_records(&config.salt).await?;
@@ -34,16 +35,16 @@ pub async fn index(
 }
 
 pub async fn destroy(
-    route_53: web::Data<Route53>,
+    route_53: web::Data<Cloudflare>,
     config: web::Data<ApiConfig>,
     id: web::Path<String>,
 ) -> Result<impl Responder> {
-    route_53.delete(&config.salt, &id.into_inner()).await?;
+    route_53.delete_record(&config.salt, &id).await?;
     Ok(web::Json(json!({})))
 }
 
 pub async fn update(
-    route_53: web::Data<Route53>,
+    route_53: web::Data<Cloudflare>,
     config: web::Data<ApiConfig>,
     query: web::Query<UpdateQuery>,
     req: HttpRequest,
@@ -59,7 +60,7 @@ pub async fn update(
 }
 
 pub async fn update_with_peer_address(
-    route_53: web::Data<Route53>,
+    route_53: web::Data<Cloudflare>,
     config: web::Data<ApiConfig>,
     id: web::Path<String>,
     req: HttpRequest,
@@ -69,7 +70,7 @@ pub async fn update_with_peer_address(
 }
 
 pub async fn update_user_supplied(
-    route_53: web::Data<Route53>,
+    route_53: web::Data<Cloudflare>,
     config: web::Data<ApiConfig>,
     id_ip: web::Path<(String, IpAddr)>,
 ) -> Result<impl Responder> {
@@ -78,7 +79,7 @@ pub async fn update_user_supplied(
 }
 
 async fn _update_inner(
-    route_53: web::Data<Route53>,
+    route_53: web::Data<Cloudflare>,
     config: web::Data<ApiConfig>,
     id: String,
     ip: String,
@@ -88,9 +89,7 @@ async fn _update_inner(
     if let Some(record) = records.iter().find(|r| r.id == id) {
         let mut record: Record = record.into();
         record.ip = ip;
-        route_53
-            .update_record(ChangeAction::Upsert, record.clone())
-            .await?;
+        route_53.update_record(record.clone()).await?;
         let display_record = record.for_display(&config.salt);
         return Ok(web::Json(display_record));
     }
@@ -99,12 +98,10 @@ async fn _update_inner(
 
 pub async fn add(
     req: HttpRequest,
-    route_53: web::Data<Route53>,
+    route_53: web::Data<Cloudflare>,
     config: web::Data<ApiConfig>,
     domain_ip: web::Query<AddQuery>,
 ) -> Result<impl Responder> {
-    eprintln!("domain_ip.clone = {:?}", domain_ip);
-
     let domain_ip = domain_ip.into_inner();
 
     let domain = parse_domain_name(&domain_ip.domain)
@@ -130,9 +127,7 @@ pub async fn add(
         ..Record::default()
     };
 
-    route_53
-        .update_record(ChangeAction::Upsert, record.clone())
-        .await?;
+    route_53.create_record(record.clone()).await?;
 
     Ok(web::Json(record.for_display(&config.salt)))
 }

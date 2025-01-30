@@ -88,11 +88,13 @@
             <th>
                 <button onclick="createDomain()">Create</button>
             </th>
+            <th>&nbsp;</th>
         </tr>
         <tr>
             <th>Domain</th>
+            <th>Type</th>
             <th>Id</th>
-            <th>Ip</th>
+            <th>Value</th>
             <th>&nbsp;</th>
         </tr>
 
@@ -147,8 +149,9 @@
     }
 
     function updateDomain(id) {
-        setLoading();
+
         const ip = document.getElementById(id).value;
+        setLoading();
         fetch(`/?id=${id}&ip=${ip}`, {
             method: 'PATCH'
         }).finally(r => {
@@ -160,7 +163,15 @@
         body.innerHTML = '';
         domains.forEach(domain => {
             const row = document.createElement('tr');
-            row.innerHTML = `<td><a href="http://${domain.domain}" target="_blank">${domain.domain}</a> </td><td>${domain.id}</td><td><input type="text" id="${domain.id}" value="${domain.ip}" /><button onclick="updateDomain('${domain.id}')">^</button></td><td><button onclick="deleteDomain('${domain.id}')">X</button></td>`;
+            row.innerHTML = `
+                <td><a href="http://${domain.domain}" target="_blank">${domain.domain}</a> </td>
+                <td>${domain.record_type}</td>
+                <td>${domain.id}</td>
+                <td>
+                    <input type="text" id="${domain.id}" value="${domain.ip}" />
+                    <button onclick="updateDomain('${domain.id}')">^</button>
+                 </td>
+                 <td><button onclick="deleteDomain('${domain.id}')">X</button></td>`;
             body.appendChild(row);
         })
     }
