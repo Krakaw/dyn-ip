@@ -30,7 +30,7 @@ jobs:
 
       - name: Install Dependencies for Musl
         if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
-        run: sudo apt-get update && sudo apt-get install -y musl-tools
+        run: sudo apt-get update && sudo apt-get install -y musl-tools libssl-dev
 
       - name: Build Binary
         run: |
