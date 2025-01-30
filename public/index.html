@@ -73,6 +73,7 @@
 </head>
 <body>
 <section>
+
     <table style="width: 100%" class="styled-table sticky">
         <thead>
         <tr>
@@ -102,14 +103,20 @@
         <tbody id="body"></tbody>
     </table>
 </section>
+<section>
+    <h2>API</h2>
+    <pre>
+        PATCH /?id=domain_id&ip=[optional_ip]
+        GET /update.php?id=domain_id&ip=[optional_ip]
+    </pre>
+</section>
 <script>
 
     const body = document.getElementById('body');
 
     async function getDomains() {
         const result = await fetch('/api/domains');
-        const domains = await result.json();
-        return domains;
+        return await result.json();
     }
 
     function createDomain() {
@@ -151,12 +158,13 @@
     function updateDomain(id) {
 
         const ip = document.getElementById(id).value;
-        setLoading();
+
         fetch(`/?id=${id}&ip=${ip}`, {
             method: 'PATCH'
         }).finally(r => {
             init();
         })
+        setLoading();
     }
 
     function generateRows(domains) {

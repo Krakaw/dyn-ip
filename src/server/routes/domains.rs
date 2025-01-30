@@ -1,11 +1,10 @@
 use crate::aws::cloudflare::Cloudflare;
-use crate::aws::record::Record;
+use crate::aws::record::{Record, RrType};
 use crate::server::ip::get_ip_from_request;
 use crate::DynIpError::{DomainHashNotFound, MissingId, MissingIp};
 use crate::{ApiConfig, DomainParse};
 use actix_web::{web, HttpRequest, Responder, Result};
 use addr::parse_domain_name;
-use aws_sdk_route53::types::{ChangeAction, RrType};
 use serde::Deserialize;
 use serde_json::json;
 use std::net::IpAddr;

@@ -113,9 +113,27 @@ impl Cloudflare {
     }
 
     pub async fn list_records(&self) -> Result<Vec<Record>, DynIpError> {
+        let mut all_records = Vec::new();
+        let mut page = 1;
+
+        loop {
+            let mut records = self.fetch_records_page(page).await?;
+            let count = records.len();
+            all_records.append(&mut records);
+
+            if count == 0 {
+                break;
+            }
+            page += 1;
+        }
+
+        Ok(all_records)
+    }
+
+    async fn fetch_records_page(&self, page: u32) -> Result<Vec<Record>, DynIpError> {
         let url = format!(
-            "https://api.cloudflare.com/client/v4/zones/{}/dns_records",
-            self.zone_id
+            "https://api.cloudflare.com/client/v4/zones/{}/dns_records?page={}",
+            self.zone_id, page
         );
 
         let response = self
@@ -160,7 +178,6 @@ impl Cloudflare {
                 .send()
                 .await
                 .map_err(|e| DynIpError::Cloudflare(e.to_string()))?;
-            info!("{:?}", response);
             Ok(())
         } else {
             Err(DynIpError::DomainHashNotFound)

@@ -1,4 +1,3 @@
-use aws_sdk_route53::types::{ResourceRecord, ResourceRecordSet, RrType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug)]
@@ -110,39 +109,6 @@ impl Default for Record {
         }
     }
 }
-impl From<Record> for ResourceRecordSet {
-    fn from(r: Record) -> Self {
-        let resource_record_a = ResourceRecord::builder()
-            .value(r.ip.to_string())
-            .build()
-            .unwrap();
-        let resource_record_set_a = ResourceRecordSet::builder()
-            .name(r.domain)
-            .r#type(r.record_type.as_str().into())
-            .ttl(r.ttl)
-            .resource_records(resource_record_a)
-            .build()
-            .unwrap();
-        resource_record_set_a
-    }
-}
-
-impl From<&ResourceRecordSet> for Record {
-    fn from(r: &ResourceRecordSet) -> Self {
-        let r = r.clone();
-        Record {
-            domain: r.name,
-            record_type: r.r#type.as_str().to_string(),
-            ip: r
-                .resource_records
-                .map(|v| v.first().map(|i| i.value.clone()))
-                .unwrap_or_default()
-                .unwrap_or_default(),
-            ttl: r.ttl.unwrap_or(60),
-            source_id: None,
-        }
-    }
-}
 
 impl Record {
     pub fn id(&self, salt: &str) -> String {
@@ -158,6 +124,28 @@ impl Record {
             ttl: self.ttl,
             id: self.id(salt),
             source_id: self.source_id.clone().expect("source_id is required"),
+        }
+    }
+}
+
+pub enum RrType {
+    A,
+    CNAME,
+}
+
+impl RrType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            RrType::A => "A",
+            RrType::CNAME => "CNAME",
+        }
+    }
+
+    pub(crate) fn from_str(s: &str) -> Result<RrType, String> {
+        match s {
+            "A" => Ok(RrType::A),
+            "CNAME" => Ok(RrType::CNAME),
+            _ => Err(format!("Invalid record type: {}", s)),
         }
     }
 }

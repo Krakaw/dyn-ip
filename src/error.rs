@@ -5,8 +5,6 @@ use thiserror::Error;
 pub enum DynIpError {
     #[error("Env Error: {0}")]
     Env(#[from] VarError),
-    #[error("AWS SDK Error: {0}")]
-    AwsSdk(String),
     #[error("Domain Parse Error: {0}")]
     DomainParse(String),
     #[error("Socker Error: {0}")]
@@ -21,10 +19,6 @@ pub enum DynIpError {
     MissingId,
     #[error("Domain Hash Not Found")]
     DomainHashNotFound,
-    #[error("Route53 Error: {0}")]
-    Route53(#[from] aws_sdk_route53::Error),
-    #[error("Route53 Build Error: {0}")]
-    Route53BuildError(String),
     #[error("Cloudflare Error: {0}")]
     Cloudflare(String),
 }
