@@ -25,5 +25,7 @@ pub enum DynIpError {
     Route53(#[from] aws_sdk_route53::Error),
     #[error("Route53 Build Error: {0}")]
     Route53BuildError(String),
+    #[error("Cloudflare Error: {0}")]
+    Cloudflare(String),
 }
 impl actix_web::error::ResponseError for DynIpError {}
