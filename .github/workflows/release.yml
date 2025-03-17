@@ -43,14 +43,14 @@ jobs:
 
       - name: Upload Binary (Normal)
         if: ${{ matrix.target == 'x86_64-unknown-linux-gnu' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dyn-ip-x86_64-unknown-linux-gnu
           path: dist/dyn-ip-x86_64-unknown-linux-gnu
 
       - name: Upload Binary (Compatibility)
         if: ${{ matrix.target == 'x86_64-unknown-linux-musl' }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dyn-ip-x86_64-unknown-linux-musl
           path: dist/dyn-ip-x86_64-unknown-linux-musl
