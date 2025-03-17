@@ -2,9 +2,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug)]
 pub struct Meta {
-    pub auto_added: bool,
-    pub managed_by_apps: bool,
-    pub managed_by_argo_tunnel: bool,
+    pub auto_added: Option<bool>,
+    pub managed_by_apps: Option<bool>,
+    pub managed_by_argo_tunnel: Option<bool>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -22,8 +22,8 @@ pub struct CloudflareRecord {
     pub tags: Vec<String>,
     pub ttl: u32,
     pub r#type: String,
-    pub zone_id: String,
-    pub zone_name: String,
+    pub zone_id: Option<String>,
+    pub zone_name: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]

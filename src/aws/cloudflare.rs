@@ -131,6 +131,7 @@ impl Cloudflare {
     }
 
     async fn fetch_records_page(&self, page: u32) -> Result<Vec<Record>, DynIpError> {
+        info!("Fetching records page {}", page);
         // TODO: Use the pagination in the response instead of waiting for an empty result
         let url = format!(
             "https://api.cloudflare.com/client/v4/zones/{}/dns_records?page={}",
@@ -147,16 +148,17 @@ impl Cloudflare {
             .map_err(|e| DynIpError::Cloudflare(e.to_string()))?
             .json::<ListRecordsResponse>()
             .await
-            .map(|r| {
-                r.result
-                    .into_iter()
-                    .filter(|r| r.r#type == "A" || r.r#type == "CNAME")
-                    .map(|r| r.into())
-                    .collect()
-            })
             .map_err(|e| DynIpError::Cloudflare(e.to_string()))?;
-
-        Ok(response)
+            
+        let filtered_records: Vec<Record> = response
+            .result
+            .into_iter()
+            .filter(|r| r.r#type == "A" || r.r#type == "CNAME")
+            .map(|r| r.into())
+            .collect();
+            
+        info!("Retrieved {} records for page {}", filtered_records.len(), page);
+        Ok(filtered_records)
     }
 
     pub async fn delete_record(&self, salt: &str, id_or_domain: &str) -> Result<(), DynIpError> {
