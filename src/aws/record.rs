@@ -49,12 +49,28 @@ pub struct ListRecordsResponse {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(try_from = "String")]
 pub enum RecordType {
     A,
     Aaaa,
     Cname,
     MX,
     Txt,
+}
+
+impl TryFrom<String> for RecordType {
+    type Error = String;
+
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        match s.to_uppercase().as_str() {
+            "A" => Ok(RecordType::A),
+            "AAAA" => Ok(RecordType::Aaaa),
+            "CNAME" => Ok(RecordType::Cname),
+            "MX" => Ok(RecordType::MX),
+            "TXT" => Ok(RecordType::Txt),
+            _ => Err(format!("Unknown record type: {}", s)),
+        }
+    }
 }
 
 impl std::fmt::Display for RecordType {
@@ -71,14 +87,7 @@ impl std::fmt::Display for RecordType {
 
 impl PartialEq<&str> for RecordType {
     fn eq(&self, other: &&str) -> bool {
-        matches!(
-            (self, *other),
-            (RecordType::A, "A")
-                | (RecordType::Aaaa, "AAAA")
-                | (RecordType::Cname, "CNAME")
-                | (RecordType::MX, "MX")
-                | (RecordType::Txt, "TXT")
-        )
+        self.to_string().eq_ignore_ascii_case(other)
     }
 }
 
