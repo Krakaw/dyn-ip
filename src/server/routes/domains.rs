@@ -8,7 +8,6 @@ use addr::parse_domain_name;
 use serde::Deserialize;
 use serde_json::json;
 use std::net::IpAddr;
-use std::str::FromStr;
 
 #[derive(Deserialize, Debug)]
 pub struct AddQuery {

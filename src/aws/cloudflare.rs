@@ -9,18 +9,32 @@ pub struct Cloudflare {
     pub client: Client,
     pub api_key: String,
     pub zone_id: String,
-    pub email: String,
     pub domain_name: String,
 }
 
 impl Cloudflare {
-    pub fn new(api_key: String, zone_id: String, email: String, domain_name: String) -> Cloudflare {
+    pub fn new(api_key: String, zone_id: String, _email: String, domain_name: String) -> Cloudflare {
         Cloudflare {
             client: Client::new(),
             api_key,
             zone_id,
-            email,
             domain_name,
+        }
+    }
+
+    async fn handle_response(&self, response: reqwest::Response) -> Result<reqwest::Response, DynIpError> {
+        if response.status().is_success() {
+            Ok(response)
+        } else {
+            let status = response.status();
+            let error_text = response
+                .text()
+                .await
+                .unwrap_or_else(|_| "Failed to read error response".to_string());
+            Err(DynIpError::Cloudflare(format!(
+                "API request failed with status {}: {}",
+                status, error_text
+            )))
         }
     }
 
@@ -35,10 +49,7 @@ impl Cloudflare {
 
         info!("Updating Record: {} {} {} {}", record_type, domain, ip, ttl);
 
-        if source_id.is_none() {
-            return Err(DynIpError::MissingId);
-        }
-        let source_id = source_id.unwrap();
+        let source_id = source_id.ok_or(DynIpError::MissingId)?;
         let url = format!(
             "https://api.cloudflare.com/client/v4/zones/{}/dns_records/{}",
             self.zone_id, source_id
@@ -61,20 +72,21 @@ impl Cloudflare {
             .send()
             .await
             .map_err(|e| DynIpError::Cloudflare(e.to_string()))?;
-        info!("response = {:?}", response);
-
+        
+        self.handle_response(response).await?;
         Ok(())
     }
+
     pub async fn create_record(&self, record: Record) -> Result<(), DynIpError> {
         let Record {
             record_type,
             domain,
             ip,
             ttl,
-            source_id,
+            source_id: _,
         } = record;
 
-        info!("Updating Record: {} {} {} {}", record_type, domain, ip, ttl);
+        info!("Creating Record: {} {} {} {}", record_type, domain, ip, ttl);
 
         let url = format!(
             "https://api.cloudflare.com/client/v4/zones/{}/dns_records",
@@ -98,8 +110,8 @@ impl Cloudflare {
             .send()
             .await
             .map_err(|e| DynIpError::Cloudflare(e.to_string()))?;
-        info!("response = {:?}", response);
-
+        
+        self.handle_response(response).await?;
         Ok(())
     }
 
@@ -132,7 +144,6 @@ impl Cloudflare {
 
     async fn fetch_records_page(&self, page: u32) -> Result<Vec<Record>, DynIpError> {
         info!("Fetching records page {}", page);
-        // TODO: Use the pagination in the response instead of waiting for an empty result
         let url = format!(
             "https://api.cloudflare.com/client/v4/zones/{}/dns_records?page={}",
             self.zone_id, page
@@ -145,12 +156,19 @@ impl Cloudflare {
             .header("Content-Type", "application/json")
             .send()
             .await
-            .map_err(|e| DynIpError::Cloudflare(e.to_string()))?
-            .json::<ListRecordsResponse>()
-            .await
             .map_err(|e| DynIpError::Cloudflare(e.to_string()))?;
+        
+        let response = self.handle_response(response).await?;
+        
+        // Get the response text first for debugging
+        let response_text = response.text().await
+            .map_err(|e| DynIpError::Cloudflare(format!("Failed to get response text: {}", e)))?;
+        
+        // Parse the text into JSON
+        let list_response = serde_json::from_str::<ListRecordsResponse>(&response_text)
+            .map_err(|e| DynIpError::Cloudflare(format!("Failed to decode response: {} - Raw response: {}", e, response_text)))?;
             
-        let filtered_records: Vec<Record> = response
+        let filtered_records: Vec<Record> = list_response
             .result
             .into_iter()
             .filter(|r| r.r#type == "A" || r.r#type == "CNAME")
@@ -181,6 +199,8 @@ impl Cloudflare {
                 .send()
                 .await
                 .map_err(|e| DynIpError::Cloudflare(e.to_string()))?;
+            
+            self.handle_response(response).await?;
             Ok(())
         } else {
             Err(DynIpError::DomainHashNotFound)
