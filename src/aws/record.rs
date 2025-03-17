@@ -1,13 +1,15 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct Meta {
     pub auto_added: Option<bool>,
     pub managed_by_apps: Option<bool>,
     pub managed_by_argo_tunnel: Option<bool>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct CloudflareRecord {
     pub comment: Option<String>,
     pub content: String,
@@ -21,12 +23,13 @@ pub struct CloudflareRecord {
     pub settings: serde_json::Value,
     pub tags: Vec<String>,
     pub ttl: u32,
-    pub r#type: String,
+    pub r#type: RecordType,
     pub zone_id: Option<String>,
     pub zone_name: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct ResultInfo {
     pub count: u32,
     pub page: u32,
@@ -35,13 +38,48 @@ pub struct ResultInfo {
     pub total_pages: u32,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct ListRecordsResponse {
     pub errors: Vec<serde_json::Value>,
     pub messages: Vec<serde_json::Value>,
     pub result: Vec<CloudflareRecord>,
     pub result_info: ResultInfo,
     pub success: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum RecordType {
+    A,
+    Aaaa,
+    Cname,
+    MX,
+    Txt,
+}
+
+impl std::fmt::Display for RecordType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RecordType::A => write!(f, "A"),
+            RecordType::Aaaa => write!(f, "AAAA"),
+            RecordType::Cname => write!(f, "CNAME"),
+            RecordType::MX => write!(f, "MX"),
+            RecordType::Txt => write!(f, "TXT"),
+        }
+    }
+}
+
+impl PartialEq<&str> for RecordType {
+    fn eq(&self, other: &&str) -> bool {
+        matches!(
+            (self, *other),
+            (RecordType::A, "A")
+                | (RecordType::Aaaa, "AAAA")
+                | (RecordType::Cname, "CNAME")
+                | (RecordType::MX, "MX")
+                | (RecordType::Txt, "TXT")
+        )
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -67,7 +105,7 @@ impl From<CloudflareRecord> for Record {
     fn from(r: CloudflareRecord) -> Self {
         Record {
             domain: r.name,
-            record_type: r.r#type,
+            record_type: r.r#type.to_string(),
             ip: r.content,
             ttl: r.ttl as i64,
             source_id: Some(r.id),
@@ -79,7 +117,7 @@ impl From<&CloudflareRecord> for Record {
     fn from(r: &CloudflareRecord) -> Self {
         Record {
             domain: r.name.clone(),
-            record_type: r.r#type.clone(),
+            record_type: r.r#type.to_string(),
             ip: r.content.clone(),
             ttl: r.ttl as i64,
             source_id: Some(r.id.clone()),
@@ -130,21 +168,21 @@ impl Record {
 
 pub enum RrType {
     A,
-    CNAME,
+    Cname,
 }
 
 impl RrType {
     pub fn as_str(&self) -> &'static str {
         match self {
             RrType::A => "A",
-            RrType::CNAME => "CNAME",
+            RrType::Cname => "CNAME",
         }
     }
 
     pub(crate) fn from_str(s: &str) -> Result<RrType, String> {
         match s {
             "A" => Ok(RrType::A),
-            "CNAME" => Ok(RrType::CNAME),
+            "CNAME" => Ok(RrType::Cname),
             _ => Err(format!("Invalid record type: {}", s)),
         }
     }

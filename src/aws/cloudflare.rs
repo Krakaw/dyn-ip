@@ -9,17 +9,15 @@ pub struct Cloudflare {
     pub client: Client,
     pub api_key: String,
     pub zone_id: String,
-    pub email: String,
     pub domain_name: String,
 }
 
 impl Cloudflare {
-    pub fn new(api_key: String, zone_id: String, email: String, domain_name: String) -> Cloudflare {
+    pub fn new(api_key: String, zone_id: String, _email: String, domain_name: String) -> Cloudflare {
         Cloudflare {
             client: Client::new(),
             api_key,
             zone_id,
-            email,
             domain_name,
         }
     }
@@ -35,10 +33,7 @@ impl Cloudflare {
 
         info!("Updating Record: {} {} {} {}", record_type, domain, ip, ttl);
 
-        if source_id.is_none() {
-            return Err(DynIpError::MissingId);
-        }
-        let source_id = source_id.unwrap();
+        let source_id = source_id.ok_or(DynIpError::MissingId)?;
         let url = format!(
             "https://api.cloudflare.com/client/v4/zones/{}/dns_records/{}",
             self.zone_id, source_id
@@ -52,7 +47,7 @@ impl Cloudflare {
             "proxied": false
         });
 
-        let response = self
+        let _response = self
             .client
             .patch(&url)
             .header("Authorization", format!("Bearer {}", &self.api_key))
@@ -61,7 +56,7 @@ impl Cloudflare {
             .send()
             .await
             .map_err(|e| DynIpError::Cloudflare(e.to_string()))?;
-        info!("response = {:?}", response);
+        info!("response = {:?}", _response);
 
         Ok(())
     }
@@ -71,7 +66,7 @@ impl Cloudflare {
             domain,
             ip,
             ttl,
-            source_id,
+            source_id: _,
         } = record;
 
         info!("Updating Record: {} {} {} {}", record_type, domain, ip, ttl);
@@ -173,7 +168,7 @@ impl Cloudflare {
                 self.zone_id, record.source_id
             );
 
-            let response = self
+            let _response = self
                 .client
                 .delete(&url)
                 .header("Authorization", format!("Bearer {}", &self.api_key))
