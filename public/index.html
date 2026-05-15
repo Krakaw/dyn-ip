@@ -1,201 +1,831 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
-    <style>
-        table.styled-table {
-            border-collapse: collapse;
-            margin: 0px 0px 25px 0;
-            font-size: 0.9em;
-            font-family: sans-serif;
-            /*min-width: 400px;*/
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
-        }
-
-        table.styled-table.sticky thead tr:not(.no-sticky) {
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-
-        table.styled-table thead tr {
-            background-color: #009879;
-            color: #ffffff;
-            text-align: left;
-        }
-
-        table.styled-table th,
-        table.styled-table td {
-            padding: 12px 15px;
-        }
-
-        table.no-height-fill.styled-table td {
-            padding: 5px;
-        }
-
-        table.no-height-fill.styled-table td, table.no-height-fill.styled-table tr {
-            display: block;
-        }
-
-        table.styled-table td:first-of-type {
-            padding: 3px;
-        }
-
-        table.styled-table tbody tr {
-            border-bottom: 1px solid #dddddd;
-
-        }
-
-        table.styled-table tbody tr.loading, table.styled-table tbody td.loading {
-            opacity: 0.6;
-        }
-
-        table.styled-table tbody tr.error {
-            color: #ff5555;
-            opacity: 0.8;
-        }
-
-        table.styled-table tbody tr:nth-of-type(even) {
-            background-color: #f3f3f3;
-        }
-
-        table.styled-table tbody tr:last-of-type {
-            border-bottom: 2px solid #009879;
-        }
-
-
-        table.styled-table tbody tr.active-row {
-            font-weight: bold;
-            color: #009879;
-        }
-
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>dyn-ip</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --bg: #f6f7f9;
+            --surface: #ffffff;
+            --surface-alt: #f0f2f5;
+            --border: #e3e6eb;
+            --text: #1a1d21;
+            --text-muted: #6b7280;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-fg: #ffffff;
+            --success: #059669;
+            --danger: #dc2626;
+            --danger-hover: #b91c1c;
+            --warning: #d97706;
+            --shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.06);
+            --radius: 10px;
+            --radius-sm: 6px;
+            --gap: 16px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f1115;
+                --surface: #181b21;
+                --surface-alt: #1f232b;
+                --border: #2a2f38;
+                --text: #e6e8eb;
+                --text-muted: #9aa3af;
+                --accent: #3b82f6;
+                --accent-hover: #60a5fa;
+                --success: #10b981;
+                --danger: #ef4444;
+                --danger-hover: #f87171;
+                --warning: #f59e0b;
+                --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.35);
+            }
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, sans-serif;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px 20px 80px;
+        }
+
+        header.app-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--gap);
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        h1 .logo-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent);
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .ip-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px 6px 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            font-size: 13px;
+            color: var(--text-muted);
+            box-shadow: var(--shadow);
+        }
+
+        .ip-pill strong {
+            color: var(--text);
+            font-variant-numeric: tabular-nums;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .card-header h2 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+
+        .card-body { padding: 18px; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: minmax(180px, 1.4fr) 110px minmax(180px, 1.4fr) auto;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .field { display: flex; flex-direction: column; gap: 4px; }
+        .field label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .domain-input {
+            display: flex;
+            align-items: stretch;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            background: var(--surface-alt);
+        }
+        .domain-input input {
+            flex: 1;
+            border: none;
+            background: transparent;
+        }
+        .domain-input .suffix {
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            font-size: 13px;
+            color: var(--text-muted);
+            background: var(--surface-alt);
+            border-left: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        input, select, button {
+            font: inherit;
+            color: inherit;
+        }
+
+        input[type="text"], select {
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--surface);
+            transition: border-color 120ms, box-shadow 120ms;
+            min-width: 0;
+            width: 100%;
+        }
+        input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+        .domain-input input { padding: 8px 10px; }
+        .domain-input:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .ip-input-wrap { display: flex; gap: 6px; }
+        .ip-input-wrap input { flex: 1; }
+
+        button {
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            padding: 8px 14px;
+            background: var(--accent);
+            color: var(--accent-fg);
+            font-weight: 500;
+            transition: background 120ms, transform 60ms, opacity 120ms;
+            white-space: nowrap;
+        }
+        button:hover { background: var(--accent-hover); }
+        button:active { transform: translateY(1px); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        button.btn-secondary {
+            background: var(--surface);
+            color: var(--text);
+            border-color: var(--border);
+        }
+        button.btn-secondary:hover {
+            background: var(--surface-alt);
+        }
+
+        button.btn-danger {
+            background: transparent;
+            color: var(--danger);
+            border-color: var(--border);
+        }
+        button.btn-danger:hover {
+            background: var(--danger);
+            color: #fff;
+            border-color: var(--danger);
+        }
+
+        button.btn-icon {
+            padding: 6px 8px;
+            background: transparent;
+            color: var(--text-muted);
+            border-color: var(--border);
+            font-size: 12px;
+        }
+        button.btn-icon:hover {
+            background: var(--surface-alt);
+            color: var(--text);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex: 1;
+            min-width: 200px;
+            max-width: 360px;
+        }
+        .toolbar input { flex: 1; }
+
+        .records {
+            display: grid;
+            grid-template-columns: minmax(0, 2.5fr) 70px minmax(0, 1.2fr) minmax(0, 2fr) auto;
+            row-gap: 0;
+        }
+
+        .records .row {
+            display: contents;
+        }
+
+        .records .cell {
+            padding: 12px 14px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .records .head-cell {
+            padding: 10px 14px;
+            background: var(--surface-alt);
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            border-top: none;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .records .head-cell.no-sort { cursor: default; }
+        .records .head-cell .arrow {
+            font-size: 10px;
+            opacity: 0.5;
+        }
+        .records .head-cell.active .arrow { opacity: 1; color: var(--accent); }
+
+        .records .cell.mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 13px;
+        }
+
+        .records .cell .truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .records .cell a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .records .cell a:hover { text-decoration: underline; }
+
+        .records .row.loading .cell { opacity: 0.5; }
+        .records .empty {
+            grid-column: 1 / -1;
+            padding: 36px;
+            text-align: center;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+        }
+
+        .type-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            background: var(--surface-alt);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+        .type-badge.A { color: var(--accent); }
+        .type-badge.CNAME { color: var(--warning); }
+
+        .row-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+        }
+
+        details.api-help summary {
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+        details.api-help pre {
+            margin: 12px 0 0;
+            padding: 14px;
+            background: var(--surface-alt);
+            border-radius: var(--radius-sm);
+            font-size: 12.5px;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+        }
+
+        .toasts {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        .toast {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            padding: 10px 14px;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow);
+            font-size: 13.5px;
+            max-width: 340px;
+            pointer-events: auto;
+            animation: toast-in 180ms ease;
+        }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.fade-out { animation: toast-out 220ms ease forwards; }
+        @keyframes toast-in {
+            from { opacity: 0; transform: translateX(12px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes toast-out {
+            to { opacity: 0; transform: translateX(12px); }
+        }
+
+        @media (max-width: 720px) {
+            .form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .form-grid .field-create-btn {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .container { padding: 16px 12px 60px; }
+            .records {
+                grid-template-columns: 1fr;
+            }
+            .records .head-row { display: none; }
+            .records .row {
+                display: block;
+                border-top: 1px solid var(--border);
+                padding: 12px 14px;
+            }
+            .records .cell {
+                border-top: none;
+                padding: 4px 0;
+            }
+            .records .cell::before {
+                content: attr(data-label);
+                display: inline-block;
+                min-width: 90px;
+                color: var(--text-muted);
+                font-size: 11px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+            .row-actions { justify-content: flex-start; padding-top: 4px; }
+        }
+    </style>
 </head>
 <body>
-<section>
+<div class="container">
 
-    <table style="width: 100%" class="styled-table sticky">
-        <thead>
-        <tr>
-            <th>Add New Domain</th>
-            <th><label><input placeholder="subdomain" id="create-domain" type="text"/>.<!--DOMAIN--></label></th>
+    <header class="app-header">
+        <h1><span class="logo-dot"></span>dyn-ip</h1>
+        <span class="ip-pill" id="ip-pill" title="Your detected public IP">
+            <span>Your IP:</span><strong id="public-ip">…</strong>
+        </span>
+    </header>
 
-            <th>
-                <label>Record Type<select id="create-record-type">
-                    <option value="A">A</option>
-                    <option value="CNAME">CNAME</option>
-                </select></label>
-                <input placeholder="ip or host" id="create-ip" type="text"/></th>
-            <th>
-                <button onclick="createDomain()">Create</button>
-            </th>
-            <th>&nbsp;</th>
-        </tr>
-        <tr>
-            <th>Domain</th>
-            <th>Type</th>
-            <th>Id</th>
-            <th>Value</th>
-            <th>&nbsp;</th>
-        </tr>
+    <section class="card">
+        <div class="card-header">
+            <h2>Add record</h2>
+        </div>
+        <div class="card-body">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="create-domain">Subdomain</label>
+                    <div class="domain-input">
+                        <input id="create-domain" type="text" placeholder="subdomain" autocomplete="off">
+                        <span class="suffix">.<!--DOMAIN--></span>
+                    </div>
+                </div>
 
-        </thead>
-        <tbody id="body"></tbody>
-    </table>
-</section>
-<section>
-    <h2>API</h2>
-    <pre>
-        PATCH /?id=domain_id&ip=[optional_ip]
-        GET /update.php?id=domain_id&ip=[optional_ip]
-    </pre>
-</section>
+                <div class="field">
+                    <label for="create-record-type">Type</label>
+                    <select id="create-record-type">
+                        <option value="A">A</option>
+                        <option value="CNAME">CNAME</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="create-ip"><span id="create-ip-label">IP address</span></label>
+                    <div class="ip-input-wrap">
+                        <input id="create-ip" type="text" placeholder="e.g. 1.2.3.4" autocomplete="off">
+                        <button type="button" class="btn-secondary" id="use-my-ip-btn" title="Use my detected IP">Use mine</button>
+                    </div>
+                </div>
+
+                <div class="field field-create-btn">
+                    <label>&nbsp;</label>
+                    <button type="button" id="create-btn">Create</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <div class="card-header">
+            <h2>Records</h2>
+            <div class="toolbar">
+                <input id="filter" type="text" placeholder="Filter by domain or value…" autocomplete="off">
+                <button type="button" class="btn-secondary" id="refresh-btn" title="Refresh">Refresh</button>
+            </div>
+        </div>
+        <div class="records" id="records">
+            <div class="row head-row">
+                <div class="head-cell" data-sort="domain">Domain <span class="arrow">▾</span></div>
+                <div class="head-cell" data-sort="record_type">Type <span class="arrow">▾</span></div>
+                <div class="head-cell no-sort">ID</div>
+                <div class="head-cell" data-sort="ip">Value <span class="arrow">▾</span></div>
+                <div class="head-cell no-sort" style="text-align:right; justify-content:flex-end;">Actions</div>
+            </div>
+            <div class="empty" id="empty-state">Loading…</div>
+        </div>
+    </section>
+
+    <details class="api-help">
+        <summary>API reference</summary>
+        <pre>GET    /api/domains                         List records
+POST   /api/domains?domain=X&record_type=A&ip=… Create
+PATCH  /api/domains/{id}                     Update with caller IP
+PATCH  /api/domains/{id}/{ip}                Update with given IP
+DELETE /api/domains/{id}                     Delete
+
+PATCH  /?id={id}&ip=[optional]               Backwards-compatible update
+GET    /update.php?id={id}&ip=[optional]     Backwards-compatible update</pre>
+    </details>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite" aria-atomic="true"></div>
+
 <script>
+    const recordsEl = document.getElementById('records');
+    const emptyEl = document.getElementById('empty-state');
+    const filterEl = document.getElementById('filter');
+    const publicIpEl = document.getElementById('public-ip');
+    const useMyIpBtn = document.getElementById('use-my-ip-btn');
+    const createBtn = document.getElementById('create-btn');
+    const refreshBtn = document.getElementById('refresh-btn');
+    const recordTypeEl = document.getElementById('create-record-type');
+    const createIpEl = document.getElementById('create-ip');
+    const createIpLabel = document.getElementById('create-ip-label');
+    const createDomainEl = document.getElementById('create-domain');
+    const toastsEl = document.getElementById('toasts');
 
-    const body = document.getElementById('body');
+    let records = [];
+    let sortKey = 'domain';
+    let sortDir = 1;
+    let publicIp = null;
 
-    async function getDomains() {
-        const result = await fetch('/api/domains');
-        return await result.json();
+    function toast(message, kind = 'info', ttl = 3200) {
+        const el = document.createElement('div');
+        el.className = 'toast ' + kind;
+        el.textContent = message;
+        toastsEl.appendChild(el);
+        setTimeout(() => {
+            el.classList.add('fade-out');
+            setTimeout(() => el.remove(), 240);
+        }, ttl);
     }
 
-    function createDomain() {
-        const createDomainInput = document.getElementById('create-domain');
-        const domain = createDomainInput.value;
-        const createRecordTypeInput = document.getElementById('create-record-type');
-        const recordType = createRecordTypeInput.value;
-        const createIpInput = document.getElementById('create-ip');
-        const ip = createIpInput.value;
-        setLoading();
-        let url = `/api/domains?domain=${domain}&record_type=${recordType}`;
-        if (ip) {
-            const key = recordType === 'A' ? 'ip' : 'host';
-            url = url + `&${key}=${ip}`;
+    async function copy(text, label) {
+        try {
+            await navigator.clipboard.writeText(text);
+            toast(`Copied ${label}`, 'success', 1800);
+        } catch (e) {
+            toast('Copy failed', 'error');
         }
+    }
 
-        fetch(url, {
-            method: 'POST',
-        }).then(r => {
-            if (r.ok) {
-                createIpInput.value = '';
-                createDomainInput.value = '';
-                createRecordTypeInput.value = '';
+    function escapeHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function escapeAttr(s) { return escapeHtml(s); }
+
+    async function loadPublicIp() {
+        try {
+            const r = await fetch('/');
+            if (!r.ok) throw new Error('failed');
+            const text = (await r.text()).trim();
+            if (text) {
+                publicIp = text;
+                publicIpEl.textContent = text;
+                publicIpEl.title = text;
+            } else {
+                publicIpEl.textContent = 'unknown';
             }
-        }).finally(_r => {
-            init()
-        })
+        } catch (_) {
+            publicIpEl.textContent = 'unknown';
+        }
     }
 
-    function deleteDomain(id) {
-        setLoading();
-        fetch(`/api/domains/${id}`, {
-            method: 'DELETE'
-        }).finally(r => {
-            init();
-        })
+    async function loadDomains() {
+        setLoading(true);
+        try {
+            const r = await fetch('/api/domains');
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            records = await r.json();
+            render();
+        } catch (e) {
+            records = [];
+            renderEmpty('Failed to load records');
+            toast('Could not load records', 'error');
+        } finally {
+            setLoading(false);
+        }
     }
 
-    function updateDomain(id) {
-
-        const ip = document.getElementById(id).value;
-
-        fetch(`/?id=${id}&ip=${ip}`, {
-            method: 'PATCH'
-        }).finally(r => {
-            init();
-        })
-        setLoading();
+    function setLoading(loading) {
+        refreshBtn.disabled = loading;
+        if (loading && records.length === 0) {
+            renderEmpty('Loading…');
+        }
     }
 
-    function generateRows(domains) {
-        body.innerHTML = '';
-        domains.forEach(domain => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td><a href="http://${domain.domain}" target="_blank">${domain.domain}</a> </td>
-                <td>${domain.record_type}</td>
-                <td>${domain.id}</td>
-                <td>
-                    <input type="text" id="${domain.id}" value="${domain.ip}" />
-                    <button onclick="updateDomain('${domain.id}')">^</button>
-                 </td>
-                 <td><button onclick="deleteDomain('${domain.id}')">X</button></td>`;
-            body.appendChild(row);
-        })
+    function renderEmpty(message) {
+        clearRows();
+        emptyEl.textContent = message;
+        emptyEl.style.display = 'block';
     }
 
-    function setLoading() {
-        body.innerHTML = '<tr><td colspan="4">Loading...</td>';
+    function clearRows() {
+        const rows = recordsEl.querySelectorAll('.row:not(.head-row), .empty');
+        rows.forEach(r => r.remove());
+        recordsEl.appendChild(emptyEl);
     }
 
-    function init() {
-        setLoading();
-        getDomains().then(domains => {
-            generateRows(domains)
+    function applyFilter(list) {
+        const q = filterEl.value.trim().toLowerCase();
+        if (!q) return list;
+        return list.filter(r =>
+            (r.domain || '').toLowerCase().includes(q) ||
+            (r.ip || '').toLowerCase().includes(q) ||
+            (r.record_type || '').toLowerCase().includes(q)
+        );
+    }
+
+    function applySort(list) {
+        const sorted = list.slice();
+        sorted.sort((a, b) => {
+            const av = String(a[sortKey] || '').toLowerCase();
+            const bv = String(b[sortKey] || '').toLowerCase();
+            if (av < bv) return -1 * sortDir;
+            if (av > bv) return 1 * sortDir;
+            return 0;
+        });
+        return sorted;
+    }
+
+    function updateSortIndicators() {
+        recordsEl.querySelectorAll('.head-cell[data-sort]').forEach(h => {
+            const key = h.dataset.sort;
+            h.classList.toggle('active', key === sortKey);
+            const arrow = h.querySelector('.arrow');
+            if (arrow) {
+                if (key === sortKey) {
+                    arrow.textContent = sortDir === 1 ? '▾' : '▴';
+                } else {
+                    arrow.textContent = '▾';
+                }
+            }
         });
     }
 
-    init();
+    function render() {
+        clearRows();
+        updateSortIndicators();
+        const list = applySort(applyFilter(records));
+
+        if (list.length === 0) {
+            emptyEl.textContent = records.length === 0
+                ? 'No records yet — add one above.'
+                : 'No matches.';
+            emptyEl.style.display = 'block';
+            return;
+        }
+
+        emptyEl.style.display = 'none';
+        const frag = document.createDocumentFragment();
+        list.forEach(d => {
+            const row = document.createElement('div');
+            row.className = 'row';
+            row.innerHTML = `
+                <div class="cell" data-label="Domain">
+                    <a href="http://${escapeAttr(d.domain)}" target="_blank" rel="noopener" class="truncate" title="${escapeAttr(d.domain)}">${escapeHtml(d.domain)}</a>
+                </div>
+                <div class="cell" data-label="Type">
+                    <span class="type-badge ${escapeAttr(d.record_type)}">${escapeHtml(d.record_type)}</span>
+                </div>
+                <div class="cell mono" data-label="ID">
+                    <span class="truncate" title="${escapeAttr(d.id)}">${escapeHtml(d.id)}</span>
+                    <button type="button" class="btn-icon" data-act="copy-id" data-id="${escapeAttr(d.id)}" title="Copy ID">Copy</button>
+                </div>
+                <div class="cell mono" data-label="Value">
+                    <input type="text" id="ip-${escapeAttr(d.id)}" value="${escapeAttr(d.ip)}">
+                    <button type="button" class="btn-icon" data-act="update" data-id="${escapeAttr(d.id)}" title="Save value">Save</button>
+                    <button type="button" class="btn-icon" data-act="copy-val" data-id="${escapeAttr(d.id)}" title="Copy value">Copy</button>
+                </div>
+                <div class="cell row-actions" data-label="Actions">
+                    <button type="button" class="btn-danger" data-act="delete" data-id="${escapeAttr(d.id)}" data-domain="${escapeAttr(d.domain)}">Delete</button>
+                </div>`;
+            frag.appendChild(row);
+        });
+        recordsEl.appendChild(frag);
+    }
+
+    async function createDomain() {
+        const domain = createDomainEl.value.trim();
+        const recordType = recordTypeEl.value;
+        const ip = createIpEl.value.trim();
+
+        if (!domain) {
+            toast('Subdomain is required', 'error');
+            createDomainEl.focus();
+            return;
+        }
+        if (recordType === 'CNAME' && !ip) {
+            toast('CNAME requires a host', 'error');
+            createIpEl.focus();
+            return;
+        }
+
+        const params = new URLSearchParams({ domain, record_type: recordType });
+        if (ip) params.set(recordType === 'A' ? 'ip' : 'host', ip);
+
+        createBtn.disabled = true;
+        try {
+            const r = await fetch('/api/domains?' + params.toString(), { method: 'POST' });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            createDomainEl.value = '';
+            createIpEl.value = '';
+            toast(`Created ${domain}`, 'success');
+            await loadDomains();
+        } catch (e) {
+            toast('Create failed', 'error');
+        } finally {
+            createBtn.disabled = false;
+        }
+    }
+
+    async function updateRecord(id) {
+        const input = document.getElementById('ip-' + id);
+        if (!input) return;
+        const ip = input.value.trim();
+        if (!ip) {
+            toast('Value cannot be empty', 'error');
+            return;
+        }
+        try {
+            const r = await fetch(`/?id=${encodeURIComponent(id)}&ip=${encodeURIComponent(ip)}`, { method: 'PATCH' });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            toast('Updated', 'success');
+            await loadDomains();
+        } catch (e) {
+            toast('Update failed', 'error');
+        }
+    }
+
+    async function deleteRecord(id, domain) {
+        if (!confirm(`Delete ${domain}?\n\nThis removes the DNS record. This cannot be undone.`)) {
+            return;
+        }
+        try {
+            const r = await fetch(`/api/domains/${encodeURIComponent(id)}`, { method: 'DELETE' });
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            toast(`Deleted ${domain}`, 'success');
+            await loadDomains();
+        } catch (e) {
+            toast('Delete failed', 'error');
+        }
+    }
+
+    function syncIpFieldLabel() {
+        const isCname = recordTypeEl.value === 'CNAME';
+        createIpLabel.textContent = isCname ? 'Target host' : 'IP address';
+        createIpEl.placeholder = isCname ? 'e.g. example.com' : 'e.g. 1.2.3.4';
+        useMyIpBtn.style.display = isCname ? 'none' : '';
+    }
+
+    recordsEl.addEventListener('click', (e) => {
+        const sortHead = e.target.closest('.head-cell[data-sort]');
+        if (sortHead) {
+            const key = sortHead.dataset.sort;
+            if (sortKey === key) {
+                sortDir = -sortDir;
+            } else {
+                sortKey = key;
+                sortDir = 1;
+            }
+            render();
+            return;
+        }
+        const btn = e.target.closest('button[data-act]');
+        if (!btn) return;
+        const id = btn.dataset.id;
+        const act = btn.dataset.act;
+        if (act === 'delete') deleteRecord(id, btn.dataset.domain || id);
+        else if (act === 'update') updateRecord(id);
+        else if (act === 'copy-id') copy(id, 'ID');
+        else if (act === 'copy-val') {
+            const inp = document.getElementById('ip-' + id);
+            if (inp) copy(inp.value, 'value');
+        }
+    });
+
+    recordsEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target.matches('input[id^="ip-"]')) {
+            const id = e.target.id.slice(3);
+            updateRecord(id);
+        }
+    });
+
+    filterEl.addEventListener('input', render);
+    refreshBtn.addEventListener('click', loadDomains);
+    createBtn.addEventListener('click', createDomain);
+    createDomainEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') createDomain(); });
+    createIpEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') createDomain(); });
+    recordTypeEl.addEventListener('change', syncIpFieldLabel);
+    useMyIpBtn.addEventListener('click', () => {
+        if (publicIp) {
+            createIpEl.value = publicIp;
+            createIpEl.focus();
+        } else {
+            toast('Public IP not detected', 'error');
+        }
+    });
+    publicIpEl.addEventListener('click', () => {
+        if (publicIp) copy(publicIp, 'IP');
+    });
+
+    syncIpFieldLabel();
+    loadPublicIp();
+    loadDomains();
 </script>
 </body>
 </html>
