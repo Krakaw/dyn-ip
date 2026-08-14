@@ -77,7 +77,8 @@ impl Cloudflare {
         Ok(())
     }
 
-    pub async fn create_record(&self, record: Record) -> Result<(), DynIpError> {
+    /// Returns the Cloudflare id of the newly created record.
+    pub async fn create_record(&self, record: Record) -> Result<String, DynIpError> {
         let Record {
             record_type,
             domain,
@@ -110,9 +111,16 @@ impl Cloudflare {
             .send()
             .await
             .map_err(|e| DynIpError::Cloudflare(e.to_string()))?;
-        
-        self.handle_response(response).await?;
-        Ok(())
+
+        let response = self.handle_response(response).await?;
+        let body: serde_json::Value = response
+            .json()
+            .await
+            .map_err(|e| DynIpError::Cloudflare(format!("Failed to decode create response: {}", e)))?;
+        body["result"]["id"]
+            .as_str()
+            .map(|id| id.to_string())
+            .ok_or_else(|| DynIpError::Cloudflare(format!("Create response missing id: {}", body)))
     }
 
     pub async fn list_display_records(&self, salt: &str) -> Result<Vec<DisplayRecord>, DynIpError> {

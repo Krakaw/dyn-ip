@@ -118,14 +118,14 @@ pub async fn add(
             .ok_or(MissingIp)?,
         _ => domain_ip.host.ok_or(MissingIp)?,
     };
-    let record = Record {
+    let mut record = Record {
         domain,
         ip,
         record_type: record_type.as_str().to_string(),
         ..Record::default()
     };
 
-    route_53.create_record(record.clone()).await?;
+    record.source_id = Some(route_53.create_record(record.clone()).await?);
 
     Ok(web::Json(record.for_display(&config.salt)))
 }
