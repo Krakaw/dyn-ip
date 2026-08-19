@@ -21,7 +21,8 @@ pub struct AddQuery {
 pub struct UpdateQuery {
     pub key: Option<String>,
     pub id: Option<String>,
-    pub ip: Option<IpAddr>,
+    // ponytail: plain String so CNAME targets pass through; validated per record type in _update_inner
+    pub ip: Option<String>,
 }
 
 pub async fn index(
@@ -50,7 +51,7 @@ pub async fn update(
     let query = query.into_inner();
     let ip = query
         .ip
-        .map(|ip| ip.to_string())
+        .filter(|ip| !ip.is_empty())
         .or_else(|| get_ip_from_request(&req))
         .ok_or(MissingIp)?;
     let id = query.key.or(query.id).ok_or(MissingId)?;
@@ -70,10 +71,10 @@ pub async fn update_with_peer_address(
 pub async fn update_user_supplied(
     route_53: web::Data<Cloudflare>,
     config: web::Data<ApiConfig>,
-    id_ip: web::Path<(String, IpAddr)>,
+    id_ip: web::Path<(String, String)>,
 ) -> Result<impl Responder> {
     let (id, ip) = id_ip.into_inner();
-    _update_inner(route_53, config, id, ip.to_string()).await
+    _update_inner(route_53, config, id, ip).await
 }
 
 async fn _update_inner(
@@ -86,6 +87,9 @@ async fn _update_inner(
 
     if let Some(record) = records.iter().find(|r| r.id == id) {
         let mut record: Record = record.into();
+        if record.record_type == RrType::A.as_str() && ip.parse::<IpAddr>().is_err() {
+            return Err(MissingIp.into());
+        }
         record.ip = ip;
         route_53.update_record(record.clone()).await?;
         let display_record = record.for_display(&config.salt);
@@ -128,4 +132,19 @@ pub async fn add(
     record.source_id = Some(route_53.create_record(record.clone()).await?);
 
     Ok(web::Json(record.for_display(&config.salt)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ponytail: the actual regression — a CNAME target used to fail query deserialization
+    #[test]
+    fn cname_target_deserializes() {
+        let q: UpdateQuery =
+            serde_urlencoded::from_str("id=abc&ip=host.example.com").expect("should parse");
+        assert_eq!(q.ip.as_deref(), Some("host.example.com"));
+        assert!("host.example.com".parse::<IpAddr>().is_err());
+        assert!("1.2.3.4".parse::<IpAddr>().is_ok());
+    }
 }
